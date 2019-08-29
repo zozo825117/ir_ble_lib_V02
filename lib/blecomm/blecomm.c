@@ -7,14 +7,14 @@
 #include "os/os.h"
 
 #define   CAL_BASEADDR              (0x180000F0)
-#define   CAL0                  		*((volatile unsigned int *)(CAL_BASEADDR+0x00))
-#define   CAL1                  		*((volatile unsigned int *)(CAL_BASEADDR+0x02))
-#define   CAL2                  		*((volatile unsigned int *)(CAL_BASEADDR+0x04))
-#define   CAL3                  		*((volatile unsigned int *)(CAL_BASEADDR+0x06))
-#define   CAL4                  		*((volatile unsigned int *)(CAL_BASEADDR+0x08))
-#define   CAL5                  		*((volatile unsigned int *)(CAL_BASEADDR+0x0A))
-#define   CAL6                  		*((volatile unsigned int *)(CAL_BASEADDR+0x0C))
-#define   CAL7                  		*((volatile unsigned int *)(CAL_BASEADDR+0x0E))
+#define   CAL0                  		*((volatile uint8_t *)(CAL_BASEADDR+0x08))
+#define   CAL1                  		*((volatile uint8_t *)(CAL_BASEADDR+0x07))
+#define   CAL2                  		*((volatile uint8_t *)(CAL_BASEADDR+0x06))
+#define   CAL3                  		*((volatile uint8_t *)(CAL_BASEADDR+0x05))
+#define   CAL4                  		*((volatile uint8_t *)(CAL_BASEADDR+0x04))
+#define   CAL5                  		*((volatile uint8_t *)(CAL_BASEADDR+0x03))
+#define   CAL6                  		*((volatile uint8_t *)(CAL_BASEADDR+0x02))
+#define   CAL7                  		*((volatile uint8_t *)(CAL_BASEADDR+0x01))
 	
 
 extern uint8_t task_tick; 
@@ -67,7 +67,7 @@ BLE_API_RESULT_T Ble_Init(TIM_TypeDef* TIMERx, IRQn_Type TIMERx_IRQn, uint32_t C
   TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStruct;
 	NVIC_InitTypeDef NVIC_InitStructure; 
 	
-  TIM_DeInit(TIMERx);
+  // TIM_DeInit(TIMERx);
 
   TIM_TimeBaseInitStruct.TIM_ClockDivision = TIM_Prescale_DIV0;
   TIM_TimeBaseInitStruct.TIM_TMROS  = TIM_Counter_TMROS_WRAPPING;
@@ -78,7 +78,7 @@ BLE_API_RESULT_T Ble_Init(TIM_TypeDef* TIMERx, IRQn_Type TIMERx_IRQn, uint32_t C
   TIM_TimeBaseInitStruct.TIM_GATE_Polarity = TIM_GATE_Polarity_High;
   TIM_TimeBaseInit(TIMERx,&TIM_TimeBaseInitStruct);
   
-  TIM_SetTimerLoadRegister(TIMERx,0xFFFFA23A);
+  TIM_SetTimerLoadRegister(TIMERx,0xFFFC5000);
 
   TIM_ITConfig(TIMERx,ENABLE);
 
@@ -101,8 +101,6 @@ BLE_API_RESULT_T Ble_Init(TIM_TypeDef* TIMERx, IRQn_Type TIMERx_IRQn, uint32_t C
 
   bleTIMER = TIMERx;
   
-  // TIMER_Cmd(TIMER_1, ENABLE);
-
   /**/
   spi_init(); //SPI初始化
   /**/
@@ -143,12 +141,19 @@ void CHIP_ID_Get(uint8_t *chipid)
 {
  uint8_t i=0;
 
- chipid[i++] = (uint8_t)(CAL4 & 0xff);
- chipid[i++] = (uint8_t)((CAL5 >> 8) & 0xff);
- chipid[i++] = (uint8_t)(CAL5 & 0xff);
- chipid[i++] = (uint8_t)((CAL6 >> 8)  & 0xff);
- chipid[i++] = (uint8_t)(CAL6 & 0xff);
- chipid[i++] = (uint8_t)((CAL7 >> 8)  & 0xff);
+ // chipid[i++] = (uint8_t)(CAL4 & 0xff);
+ // chipid[i++] = (uint8_t)((CAL5 >> 8) & 0xff);
+ // chipid[i++] = (uint8_t)(CAL5 & 0xff);
+ // chipid[i++] = (uint8_t)((CAL6 >> 8)  & 0xff);
+ // chipid[i++] = (uint8_t)(CAL6 & 0xff);
+ // chipid[i++] = (uint8_t)((CAL7 >> 8)  & 0xff);
+
+ chipid[i++] = (uint8_t)(CAL0);
+ chipid[i++] = (uint8_t)(CAL1);
+ chipid[i++] = (uint8_t)(CAL2);
+ chipid[i++] = (uint8_t)(CAL3);
+ chipid[i++] = (uint8_t)(CAL4);
+ chipid[i++] = (uint8_t)(CAL5);
  // chipid[i++] = (uint8_t)(CAL7 & 0xff);
 
 }

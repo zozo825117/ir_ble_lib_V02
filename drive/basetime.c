@@ -2,6 +2,7 @@
 // 基本定时器TIMx,x[6,7]定时初始化函数
 
 #include "basetime.h" 
+// #include "main.h"
 
 uint32_t time_tick=0;
 
@@ -66,6 +67,7 @@ void BASIC_TIM_IRQHandler(void)
   BASIC_TIM->ICLR = (uint32_t)(0x01&TIM_IT_FLAG);
   // BASIC_TIMFLag = 0x01;
   time_tick++;
+	// GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
 }
 
 uint32_t Timer_Get_Time_Stamp(void)

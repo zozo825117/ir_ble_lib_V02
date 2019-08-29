@@ -57,7 +57,9 @@
 // #define WL1601_MOSI_Read()			(PORT_ReadInputDataBit(WL1601_MOSI_Port,WL1601_MOSI_Pin)&Bit_SET)
 // #define WL1601_MISO_Read()			(PORT_ReadInputDataBit(WL1601_MISO_Port,WL1601_MISO_Pin)&Bit_SET)
                                     
-#define WL1601_MOSI_Read()            (WL1601_MOSI_Port->DI & WL1601_MOSI_Pin) != WL1601_MOSI_Pin ? Bit_RESET : Bit_SET
+// #define WL1601_MOSI_Read()            (WL1601_MOSI_Port->DI & WL1601_MOSI_Pin) != WL1601_MOSI_Pin ? Bit_RESET : Bit_SET
+#define WL1601_MOSI_Read()            GPIO_ReadInputDataBit(WL1601_MOSI_Port,WL1601_MOSI_Pin)
+
 #define WL1601_MISO_Read()            (WL1601_MISO_Port->DI & WL1601_MISO_Pin) != WL1601_MISO_Pin ? Bit_RESET : Bit_SET
 
 #define WL1601B_CE_SET()              WL1601_CE_Port->DOSE = WL1601_CE_Pin//PORT_WriteBit(WL1601_CE_Port,WL1601_CE_Pin,Bit_SET)

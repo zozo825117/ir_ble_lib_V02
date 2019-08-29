@@ -27,23 +27,23 @@ uint8_t uart_rx_ok;
 uint8_t rf_tx_len;
 uint8_t test_step = 0;
 
-void Delay(__IO uint32_t nCount)	 //¼òµ¥µÄÑÓÊ±º¯Êı
+void Delay(__IO uint32_t nCount)	 //ç®€å•çš„å»¶æ—¶å‡½æ•°
 {
 	for(; nCount != 0; nCount--);
 }
 
 
  /**
-  * @brief  ³õÊ¼»¯¿ØÖÆLEDµÄIO
-  * @param  ÎŞ
-  * @retval ÎŞ
+  * @brief  åˆå§‹åŒ–æ§åˆ¶LEDçš„IO
+  * @param  æ— 
+  * @retval æ— 
   */
 void TestPinConfig(void)
 {		
-		/*¶¨ÒåÒ»¸öGPIO_InitTypeDefÀàĞÍµÄ½á¹¹Ìå*/
+		/*å®šä¹‰ä¸€ä¸ªGPIO_InitTypeDefç±»å‹çš„ç»“æ„ä½“*/
 		GPIO_InitTypeDef GPIO_InitStruct;
 
-		//½«USART RxµÄGPIOÅäÖÃÎªÍÆÍì¸´ÓÃÄ£Ê½
+		//å°†USART Rxçš„GPIOé…ç½®ä¸ºæ¨æŒ½å¤ç”¨æ¨¡å¼
 		GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
 		GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
 		GPIO_InitStruct.GPIO_Pin = TEST_GPIO_PORT_PIN;
@@ -53,9 +53,23 @@ void TestPinConfig(void)
 	
 
 
-		/* ¹Ø±ÕËùÓĞledµÆ	*/
+		/* å…³é—­æ‰€æœ‰ledç¯	*/
 		GPIO_ResetBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
 
+}
+/**
+  * @brief  This function handles TIMER0_IRQHandler interrupt request.
+  * @param  None
+  * @retval None
+  */
+void TIMER11_IRQHandler(void)
+{
+  // TIM_ClearITFlag(BASIC_TIM,TIM_IT_FLAG);
+  TIM11->ICLR = (uint32_t)(0x01&TIM_IT_FLAG);
+
+  Ble_BackgroudProcess();
+  GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
+		
 }
 
 /*****************************************************************************
@@ -192,8 +206,8 @@ void testTask(void)
 
  /**
   * @brief   main
-  * @param   ÎŞ
-  * @retval ÎŞ
+  * @param   æ— 
+  * @retval æ— 
   */
 int main( void )
 {
@@ -209,21 +223,21 @@ int main( void )
 	RCC->CLKCON  |= 0x5a690005;
 	RCC->REGLOCK =  0x55aa6698;
 
-	/*´ò¿ªÍâ²¿µÍÆµÊ±ÖÓ*/
+	/*æ‰“å¼€å¤–éƒ¨ä½é¢‘æ—¶é’Ÿ*/
 	RCC->REGLOCK = 0x55aa6699;
-	/*ÉèÖÃÍâ²¿µÍÆµÊ±ÖÓ¼Ä´æÆ÷*/
+	/*è®¾ç½®å¤–éƒ¨ä½é¢‘æ—¶é’Ÿå¯„å­˜å™¨*/
 	RCC->LXTCR =  0x5a690D6F;
 	Delay(10000);
-	/*µÈ´ıÍâ²¿µÍÆµÊ±ÖÓÎÈ¶¨*/
+	/*ç­‰å¾…å¤–éƒ¨ä½é¢‘æ—¶é’Ÿç¨³å®š*/
 	while(!(RCC->LXTCR&0x40)); 
-	/*ÉèÖÃÍâ²¿µÍÆµÊ±ÖÓ*/
+	/*è®¾ç½®å¤–éƒ¨ä½é¢‘æ—¶é’Ÿ*/
 	RCC->REGLOCK = 0x55aa6698;
 
 	SystemCoreClock    = 24000000;
 
 	delay_cycle = (uint16_t)(SystemCoreClock / 1000000 * 81 );
 
-	/*ÅäÖÃUARTÍ¨Ñ¶¶Ë¿Ú*/
+	/*é…ç½®UARTé€šè®¯ç«¯å£*/
 	Debug_Print_Init();			
 	Delay(1000);
 	Debug_Print("hellow SystemCoreClock =%dHz\r\n ",SystemCoreClock);
@@ -236,8 +250,6 @@ int main( void )
 	BASIC_TIM_init();
 
 	Ble_Init(TIM11,TIMER11_IRQn,0,SystemCoreClock,app_callback);
-
-
 
 	if(Ble_GetMac(mac_buf) == BLE_ERROR_OK){
 		Debug_Print("default mac = 0x%x%x%x%x%x%x\r\n", mac_buf[0],mac_buf[1],mac_buf[2],mac_buf[3],mac_buf[4],mac_buf[5]);
@@ -272,7 +284,7 @@ int main( void )
 		Debug_Print("Ble_SetName error\r\n");
 	}
 	
-	/*Ê±¼ä»ñÈ¡ÏÔÊ¾*/
+	/*æ—¶é—´è·å–æ˜¾ç¤º*/
 	while(1)
 	{
 		// delay_0_5_ms(1);

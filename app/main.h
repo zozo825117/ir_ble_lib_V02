@@ -10,8 +10,8 @@
 
 
 /* define ------------------------*/
-#define      TEST_GPIO_PORT                      GPIOC
-#define      TEST_GPIO_PORT_PIN                  GPIO_Pin_5
+#define      TEST_GPIO_PORT                      GPIOD
+#define      TEST_GPIO_PORT_PIN                  GPIO_Pin_3
 #define      TEST_GPIO_PORT_PIN_SOURCE           GPIO_PinSource5
 
 

@@ -29,7 +29,7 @@
 #define            BASIC_TIM_TOG_NE            DISABLE
 
 
-#define            BASIC_TIM_LOAD_VALUE         0xFFFFA23A
+#define            BASIC_TIM_LOAD_VALUE         0xFFFFA180  //1ms
 
 
 #define            BASIC_TIM_TI_ENABLE         ENABLE

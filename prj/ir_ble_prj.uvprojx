@@ -564,10 +564,42 @@
               <FileType>1</FileType>
               <FilePath>..\drive\debug_uart.c</FilePath>
             </File>
+            <File>
+              <FileName>spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drive\spi.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>Blecomm</GroupName>
+          <Files>
+            <File>
+              <FileName>blecomm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\lib\blecomm\blecomm.c</FilePath>
+            </File>
+            <File>
+              <FileName>os.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\lib\blecomm\os\os.c</FilePath>
+            </File>
+            <File>
+              <FileName>netstack_mac.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\lib\blecomm\ble\mac\netstack_mac.c</FilePath>
+            </File>
+            <File>
+              <FileName>netstack_net.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\lib\blecomm\ble\net\netstack_net.c</FilePath>
+            </File>
+            <File>
+              <FileName>netstack_phy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\lib\blecomm\ble\phy\netstack_phy.c</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>::CMSIS</GroupName>
