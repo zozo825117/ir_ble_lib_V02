@@ -5,7 +5,8 @@
 #include "main.h"
 #include "debug_uart.h"
 #include "delay.h"
-#include "basetime.h" 
+#include "basetime.h"
+#include "advtime.h"
 #include "blecomm.h"
 
 
@@ -68,7 +69,7 @@ void TIMER11_IRQHandler(void)
   TIM11->ICLR = (uint32_t)(0x01&TIM_IT_FLAG);
 
   Ble_BackgroudProcess();
-  GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
+  // GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
 		
 }
 
@@ -249,6 +250,9 @@ int main( void )
 
 	BASIC_TIM_init();
 
+	// TEST_TIM_Mode_Config();
+	// delay_ms(200000);
+
 	Ble_Init(TIM11,TIMER11_IRQn,0,SystemCoreClock,app_callback);
 
 	if(Ble_GetMac(mac_buf) == BLE_ERROR_OK){
@@ -294,7 +298,7 @@ int main( void )
 		if(Timer_Time_Elapsed(runTimeTimer,10)){
 			Ble_ProcessEvents();
 			testTask();
-			GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
+			// GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
 			runTimeTimer = Timer_Get_Time_Stamp();
 		}
 		

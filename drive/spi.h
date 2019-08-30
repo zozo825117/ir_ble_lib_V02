@@ -27,6 +27,7 @@
 
 #define WL1601_MOSI_Pin GPIO_Pin_6
 #define WL1601_MOSI_Port GPIOC
+#define WL1601_MOSI_Pin_NUM  6
 
 #define WL1601_MISO_Pin GPIO_Pin_2
 #define WL1601_MISO_Port GPIOD
@@ -41,12 +42,12 @@
 // #define WL1601_SCK_Output()         WL1601_SCK_Port->DIR |= WL1601_SCK_Pin
                                    
 #define WL1601_MOSI_Output()        WL1601_MOSI_Port->DIR |= WL1601_MOSI_Pin;\
-                                    WL1601_MOSI_Port->PUPD &= ~(GPIO_PuPd_ALL << (6*2));\
-                                    WL1601_MOSI_Port->PUPD |= (GPIO_PuPd_UP << (6 *2));
+                                    WL1601_MOSI_Port->PUPD &= ~(GPIO_PuPd_ALL << (WL1601_MOSI_Pin_NUM*2));\
+                                    WL1601_MOSI_Port->PUPD |= (GPIO_PuPd_UP << (WL1601_MOSI_Pin_NUM *2));
                                                                         
 #define WL1601_MOSI_Input()         WL1601_MOSI_Port->DIR &=~ WL1601_MOSI_Pin;\
-                                    WL1601_MOSI_Port->PUPD &= ~(GPIO_PuPd_ALL << (6*2));\
-                                    WL1601_MOSI_Port->PUPD |= (GPIO_PuPd_NOPULL << (6 *2));
+                                    WL1601_MOSI_Port->PUPD &= ~(GPIO_PuPd_ALL << (WL1601_MOSI_Pin_NUM*2));\
+                                    WL1601_MOSI_Port->PUPD |= (GPIO_PuPd_NOPULL << (WL1601_MOSI_Pin_NUM*2));
                                                                         
 // #define WL1601_MISO_Output()        WL1601_MISO_Port->Pn_SEL0 &=~ WL1601_MISO_Pin;\
 //                                     WL1601_MISO_Port->DIR &=~ WL1601_MISO_Pin
