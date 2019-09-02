@@ -335,7 +335,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\app;..\core;..\drive;..\lib\inc;..\lib\blecomm;.\RTE</IncludePath>
+              <IncludePath>..\app;..\core;..\drive;..\lib\inc;..\lib\blecomm;..\lib\ir_remote;.\RTE</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -569,6 +569,16 @@
               <FileType>1</FileType>
               <FilePath>..\drive\spi.c</FilePath>
             </File>
+            <File>
+              <FileName>lptimer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drive\lptimer.c</FilePath>
+            </File>
+            <File>
+              <FileName>advtime.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\drive\advtime.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -598,6 +608,21 @@
               <FileName>netstack_phy.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\lib\blecomm\ble\phy\netstack_phy.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>IRremote</GroupName>
+          <Files>
+            <File>
+              <FileName>IRmain.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\lib\ir_remote\IRmain.c</FilePath>
+            </File>
+            <File>
+              <FileName>IRremote.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\lib\ir_remote\IRremote.c</FilePath>
             </File>
           </Files>
         </Group>

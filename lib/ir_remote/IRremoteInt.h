@@ -16,11 +16,14 @@
 #ifndef IRremoteint_h
 #define IRremoteint_h
 
-#if defined(ARDUINO) && ARDUINO >= 100
-#include <Arduino.h>
-#else
-#include <WProgram.h>
-#endif
+#include "advtime.h"
+#include "delay.h"
+
+// #if defined(ARDUINO) && ARDUINO >= 100
+// #include <Arduino.h>
+// #else
+// #include <WProgram.h>
+// #endif
 
 // define which timer to use
 //
@@ -28,52 +31,53 @@
 // are using another library which uses timer2, you have options
 // to switch IRremote to use a different timer.
 
-// Arduino Mega
-#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
-  //#define IR_USE_TIMER1   // tx = pin 11
-  #define IR_USE_TIMER2     // tx = pin 9
-  //#define IR_USE_TIMER3   // tx = pin 5
-  //#define IR_USE_TIMER4   // tx = pin 6
-  //#define IR_USE_TIMER5   // tx = pin 46
+// // Arduino Mega
+// #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+//   //#define IR_USE_TIMER1   // tx = pin 11
+//   #define IR_USE_TIMER2     // tx = pin 9
+//   //#define IR_USE_TIMER3   // tx = pin 5
+//   //#define IR_USE_TIMER4   // tx = pin 6
+//   //#define IR_USE_TIMER5   // tx = pin 46
 
-// Teensy 1.0
-#elif defined(__AVR_AT90USB162__)
-  #define IR_USE_TIMER1     // tx = pin 17
+// // Teensy 1.0
+// #elif defined(__AVR_AT90USB162__)
+//   #define IR_USE_TIMER1     // tx = pin 17
 
-// Teensy 2.0
-#elif defined(__AVR_ATmega32U4__)
-  //#define IR_USE_TIMER1   // tx = pin 14
-  //#define IR_USE_TIMER3   // tx = pin 9
-  #define IR_USE_TIMER4_HS  // tx = pin 10
+// // Teensy 2.0
+// #elif defined(__AVR_ATmega32U4__)
+//   //#define IR_USE_TIMER1   // tx = pin 14
+//   //#define IR_USE_TIMER3   // tx = pin 9
+//   #define IR_USE_TIMER4_HS  // tx = pin 10
 
-// Teensy++ 1.0 & 2.0
-#elif defined(__AVR_AT90USB646__) || defined(__AVR_AT90USB1286__)
-  //#define IR_USE_TIMER1   // tx = pin 25
-  #define IR_USE_TIMER2     // tx = pin 1
-  //#define IR_USE_TIMER3   // tx = pin 16
+// // Teensy++ 1.0 & 2.0
+// #elif defined(__AVR_AT90USB646__) || defined(__AVR_AT90USB1286__)
+//   //#define IR_USE_TIMER1   // tx = pin 25
+//   #define IR_USE_TIMER2     // tx = pin 1
+//   //#define IR_USE_TIMER3   // tx = pin 16
 
-// Sanguino
-#elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__)
-  //#define IR_USE_TIMER1   // tx = pin 13
-  #define IR_USE_TIMER2     // tx = pin 14
+// // Sanguino
+// #elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__)
+//   //#define IR_USE_TIMER1   // tx = pin 13
+//   #define IR_USE_TIMER2     // tx = pin 14
 
-// Atmega8
-#elif defined(__AVR_ATmega8P__) || defined(__AVR_ATmega8__)
-  #define IR_USE_TIMER1   // tx = pin 9
+// // Atmega8
+// #elif defined(__AVR_ATmega8P__) || defined(__AVR_ATmega8__)
+//   #define IR_USE_TIMER1   // tx = pin 9
 
-// Arduino Duemilanove, Diecimila, LilyPad, Mini, Fio, etc
-#else
-  //#define IR_USE_TIMER1   // tx = pin 9
-  #define IR_USE_TIMER2     // tx = pin 3
-#endif
+// // Arduino Duemilanove, Diecimila, LilyPad, Mini, Fio, etc
+// #else
+//   //#define IR_USE_TIMER1   // tx = pin 9
+//   #define IR_USE_TIMER2     // tx = pin 3
+// #endif
 
+#define IR_USE_ADVTIMER
+#define xm32003
 
-
-#ifdef F_CPU
-#define SYSCLOCK F_CPU     // main Arduino clock
-#else
-#define SYSCLOCK 16000000  // main Arduino clock
-#endif
+// #ifdef F_CPU
+// #define SYSCLOCK F_CPU     // main Arduino clock
+// #else
+// #define SYSCLOCK 16000000  // main Arduino clock
+// #endif
 
 #define ERR 0
 #define DECODED 1
@@ -180,6 +184,7 @@ int MATCH_SPACE(int measured_ticks, int desired_us) {return MATCH(measured_ticks
 #endif
 
 // receiver states
+#define STATE_DISABLE  0
 #define STATE_IDLE     2
 #define STATE_MARK     3
 #define STATE_SPACE    4
@@ -201,8 +206,8 @@ irparams_t;
 extern volatile irparams_t irparams;
 
 // IR detector output is active low
-#define MARK  0
-#define SPACE 1
+// #define MARK  0
+// #define SPACE 1
 
 #define TOPBIT 0x80000000
 
@@ -224,62 +229,79 @@ extern volatile irparams_t irparams;
 
 
 
-
 // defines for timer2 (8 bits)
 #if defined(IR_USE_ADVTIMER)
-#define TIMER_RESET
+#define TIMER_RESET          ADVICE_TIMx->CNT = 0
 // #define TIMER_ENABLE_PWM     (TCCR2A |= _BV(COM2B1))
 // #define TIMER_DISABLE_PWM    (TCCR2A &= ~(_BV(COM2B1)))
-#define TIMER_ENABLE_INTR    (TIMSK2 = _BV(OCIE2A))
-#define TIMER_DISABLE_INTR   (TIMSK2 = 0)
-#define TIMER_INTR_NAME      TIMER2_COMPA_vect
+#define TIMER_ENABLE_INTR    GPIO_PinAFConfig(ADVTIM_TIM_CAPTURE_GPIOx,ADVTIM_TIM_CAPTURE_PIN_SOURCE,ADVTIM_TIM_AF_VALUE);\
+                              ADVTIM_ClearITPendingBit(ADVICE_TIMx, TIM_IT_CC2);\
+                              ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC2, ENABLE)
+#define TIMER_DISABLE_INTR   ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC2, DISABLE);\
+                              ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,DISABLE)
+
+#define GET_TIMER_CAP_INPUT()   ADVICE_TIMx->CCER & (TIM_ICPolarity_Falling<<4) ? SPACE : MARK
+
+#define TOG_TIMER_CAP         ADVICE_TIMx->CCER ^= (TIM_ICPolarity_Falling<<4)
+
+#define GET_TIMER_CAP()       ADVTIM_GetCapture2(ADVICE_TIMx)
+
+#define TIMER_UPDATA_ENABLE_INTR  ADVTIM_ClearITPendingBit(ADVICE_TIMx , TIM_FLAG_Update);\
+                                  ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,ENABLE)
+
+#define TIMER_UPDATA_DISABLE_INTR  ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,DISABLE);\
+                                    ADVICE_TIMx->CCER |= (TIM_ICPolarity_Falling<<4)
+
+
+
+#define TIMER_INTR_NAME      ADVTIM_IRQHandler
 #define TIMER_CONFIG_KHZ(val)
 
 #define TIMER_COUNT_TOP      (SYSCLOCK * USECPERTICK / 1000000)
-#if (TIMER_COUNT_TOP < 256)
-#define TIMER_CONFIG_NORMAL() ({ \
-  TCCR2A = _BV(WGM21); \
-  TCCR2B = _BV(CS20); \
-  OCR2A = TIMER_COUNT_TOP; \
-  TCNT2 = 0; \
-})
-#else
-#define TIMER_CONFIG_NORMAL() ({ \
-  TCCR2A = _BV(WGM21); \
-  TCCR2B = _BV(CS21); \
-  OCR2A = TIMER_COUNT_TOP / 8; \
-  TCNT2 = 0; \
-})
-#endif
+
+#define TIMER_CONFIG_NORMAL()    \
+  ADVTIM_CAPTUREMODE_Config()
+
+#define TIMER_DISABLE()  \
+  TIMER_DISABLE_INTR;\
+  GPIO_PinAFConfig(ADVTIM_TIM_CAPTURE_GPIOx,ADVTIM_TIM_CAPTURE_PIN_SOURCE,((uint8_t)0x00));
+
+#define TIMER_ENABLE()  \
+  GPIO_PinAFConfig(ADVTIM_TIM_CAPTURE_GPIOx,ADVTIM_TIM_CAPTURE_PIN_SOURCE,((uint8_t)ADVTIM_TIM_AF_VALUE));\
+  TIMER_ENABLE_INTR
+  
 
 #if defined(xm32003)
+// IR detector output is active low
+#define MARK                  Bit_RESET
+#define SPACE                 Bit_SET
 
-#define MARK                  Bit_SET
-#define SPACE                 Bit_RESET
+#define TIMER_PWM_PORT        GPIOD  /* */
+#define TIMER_PWM_PIN         GPIO_Pin_3  /* Arduino Duemilanove, Diecimila, LilyPad, etc */
 
-#define TIMER_PWM_PORT          GPIOD  /* */
-#define TIMER_PWM_PIN           GPIO_Pin_3  /* Arduino Duemilanove, Diecimila, LilyPad, etc */
+#define IR_REC_PORT           GPIOD
+#define IR_REC_PIN            GPIO_Pin_3
 
-#define IR_REC_PORT             GPIOD
-
-#define pinMode(port, pin, direct)    if(direct){port->DIR |= pin;}else{port->DIR &=~ pin}  
-#define digitalWrite(port, pin, val)  if(direct){port->DOSE = pin;}else{port->DOCL = pin}  
+#define pinMode(port, pin, direct)    if(direct){port->DIR |= pin;}else{port->DIR &=~ pin;}  
+#define digitalWrite(port, pin, val)  if(val){port->DOSE = pin;}else{port->DOCL = pin;}  
 #define digitalRead(port, pin)        GPIO_ReadInputDataBit(port,pin)
 
-#define delayMicroseconds       delay_ms
+#define delayMicroseconds       delay_us
 
-#define TIMER_ENABLE_PWM     (digitalWrite(TIMER_PWM_PORT, TIMER_PWM_PIN, HIGH))
-#define TIMER_DISABLE_PWM    (digitalWrite(TIMER_PWM_PORT, TIMER_PWM_PIN, LOW))
+// #define digitalWrite          GPIO_WriteBit
+
+#define TIMER_ENABLE_PWM     digitalWrite(TIMER_PWM_PORT, TIMER_PWM_PIN, LOW)
+#define TIMER_DISABLE_PWM    digitalWrite(TIMER_PWM_PORT, TIMER_PWM_PIN, HIGH)
 
 // defines for blinking the LED
-#define CORE_LED0_PIN
+// #define CORE_LED0_PIN
 
 #if defined(CORE_LED0_PIN)
 #define BLINKLED_PORT  GPIOD
 #define BLINKLED       GPIO_Pin_3
 
-#define BLINKLED_ON()  (digitalWrite(BLINKLED_PORT, BLINKLED, HIGH))
-#define BLINKLED_OFF() (digitalWrite(BLINKLED_PORT, BLINKLED, LOW))
+#define BLINKLED_ON()  digitalWrite(BLINKLED_PORT, BLINKLED, HIGH)
+#define BLINKLED_OFF() digitalWrite(BLINKLED_PORT, BLINKLED, LOW)
 #else
 #define BLINKLED_PORT  
 #define BLINKLED       

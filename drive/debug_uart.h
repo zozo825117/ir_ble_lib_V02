@@ -15,15 +15,15 @@
 
 #define  DEBUG_RATEDBAUD_ENABLE    		ENABLE
 #define  DEBUG_RATETIMER_ENABLE    		DISABLE
-#define  DEBUG_UART_TX_GPIO_PORT       	GPIOC   
-#define  DEBUG_UART_TX_GPIO_PIN        	GPIO_Pin_3
-#define  DEBUG_UART_TX_PIN_SOURCE      	GPIO_PinSource3
-#define  DEBUG_UART_RX_GPIO_PORT       	GPIOC
-#define  DEBUG_UART_RX_GPIO_PIN        	GPIO_Pin_4
-#define  DEBUG_UART_RX_PIN_SOURCE      	GPIO_PinSource4
+#define  DEBUG_UART_TX_GPIO_PORT       	GPIOD//GPIOC   
+#define  DEBUG_UART_TX_GPIO_PIN        	GPIO_Pin_5//GPIO_Pin_3
+#define  DEBUG_UART_TX_PIN_SOURCE      	GPIO_PinSource5//GPIO_PinSource3
+#define  DEBUG_UART_RX_GPIO_PORT       	GPIOD//GPIOC
+#define  DEBUG_UART_RX_GPIO_PIN        	GPIO_Pin_6//GPIO_Pin_4
+#define  DEBUG_UART_RX_PIN_SOURCE      	GPIO_PinSource6//GPIO_PinSource4
 
-#define  DEBUG_UART_RX_AF_VALUE         GPIO_AF_UART1_RX_PC4
-#define  DEBUG_UART_TX_AF_VALUE         GPIO_AF_UART1_TX_PC3
+#define  DEBUG_UART_RX_AF_VALUE         GPIO_AF_UART1_RX_PD6//GPIO_AF_UART1_RX_PC4
+#define  DEBUG_UART_TX_AF_VALUE         GPIO_AF_UART1_TX_PD5//GPIO_AF_UART1_TX_PC3
 
 #define  DEBUG_UART_MODE               	UART_MODE1
 #define  DEBUG_UART_IRQ                	UART1_IRQn

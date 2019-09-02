@@ -8,7 +8,7 @@
 #include "basetime.h"
 #include "advtime.h"
 #include "blecomm.h"
-
+#include "IRmain.h"
 
 uint8_t bMacAddr[] = {0xCC,0xAA,0x11,0x00,0x21,0x11};
 
@@ -20,6 +20,7 @@ uint32_t timeCloseTimer = 0;
 uint32_t timeDisconnectTimer = 0;
 uint32_t timeUartReceTimer = 0;
 uint32_t runTimeTimer =0;
+uint32_t irTimeTimer = 0;
 uint32_t send2_4GTimer = 0;
 
 uint8_t uart_rx_buf[20];
@@ -235,18 +236,24 @@ int main( void )
 	RCC->REGLOCK = 0x55aa6698;
 
 	SystemCoreClock    = 24000000;
+	// SystemCoreClockMhz = SystemCoreClock/1000000;
 
-	delay_cycle = (uint16_t)(SystemCoreClock / 1000000 * 81 );
-
-	/*配置UART通讯端口*/
-	Debug_Print_Init();			
-	Delay(1000);
-	Debug_Print("hellow SystemCoreClock =%dHz\r\n ",SystemCoreClock);
-
-	
+	// delay_cycle = (uint16_t)(SystemCoreClock / 1000000 * 81 );
 	TestPinConfig();
 	
 	SysTick_Configuration();
+	
+		/*配置UART通讯端口*/
+	Debug_Print_Init();			
+	Delay(1000);
+	Debug_Print("hellow SystemCoreClock =%dHz SystemCoreClockMhz=%dMhz\r\n ",
+		SystemCoreClock,
+		SystemCoreClockMhz);
+
+	// while(1){
+	// 	delay_us(1);
+	// 	GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
+	// }
 
 	BASIC_TIM_init();
 
@@ -287,6 +294,8 @@ int main( void )
 	else{
 		Debug_Print("Ble_SetName error\r\n");
 	}
+
+	IRinit();
 	
 	/*时间获取显示*/
 	while(1)
@@ -300,6 +309,12 @@ int main( void )
 			testTask();
 			// GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
 			runTimeTimer = Timer_Get_Time_Stamp();
+		}
+		
+		if(Timer_Time_Elapsed(irTimeTimer,10)){
+			IRloop(&IRdata);
+			// GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
+			irTimeTimer = Timer_Get_Time_Stamp();
 		}
 		
 		

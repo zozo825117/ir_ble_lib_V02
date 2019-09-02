@@ -6,7 +6,8 @@
 //#include "cx32l003_conf.h"
 
 
-extern uint16_t delay_cycle;
+// extern uint16_t delay_cycle;
+extern uint16_t SystemCoreClockMhz;
 
 void delay_us(uint32_t u32Cnt);
 void delay_ms(uint32_t u32Cnt);

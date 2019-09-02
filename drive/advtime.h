@@ -18,9 +18,9 @@
 #define     CCMR_PWMMode1       		(uint32_t)0x6060
 #define     CCMR_PWMMode2       		(uint32_t)0x7070
 
-#define     ADVICE_TIMx                         ADVTIM1
-#define     ADVICE_TIM_PERIOD                   0x1203
-#define		  ADVICE_TIM_PRESCALER                0x0000
+#define     ADVICE_TIMx                         ADVTIM2//ADVTIM1
+#define     ADVICE_TIM_PERIOD                   0xffff//0x2710//0x1203
+#define		  ADVICE_TIM_PRESCALER                0x4B0//0x0000
 #define		  ADVICE_TIM_CLKDIV                   TIM_CKD_DIV1
 #define		  ADVICE_TIM_COUNTERMODE              TIM_CounterMode_Up
 #define		  ADVICE_TIM_REPETITONCOUNTER         0x00
@@ -58,28 +58,28 @@
 #define     ADVTIM_TIM_CCMRVALUE             CCMR_Frozen
 
 
-#define     ADVTIM_TIM_CAPTURE_GPIOx              GPIOC
+#define     ADVTIM_TIM_CAPTURE_GPIOx              GPIOD//GPIOC
 #define     ADVTIM_TIM_SINGLECAPTURE_GPIOx        GPIOA
-#define     ADVTIM_TIM_CAPTURE_PIN_SOURCE         GPIO_PinSource4
-#define     ADVTIM_TIM_AF_VALUE                   GPIO_AF_TIM1_CH4_PC4
+#define     ADVTIM_TIM_CAPTURE_PIN_SOURCE         GPIO_PinSource3//GPIO_PinSource4
+#define     ADVTIM_TIM_AF_VALUE                   ((uint8_t)0x08) // GPIO_AF_TIM2_CH2_PD3    GPIO_AF_TIM1_CH4_PC4
 
 #define		  ADVTIM_TIM_Channel1          TIM_Channel_1
 #define		  ADVTIM_TIM_Channel2          TIM_Channel_2
 #define		  ADVTIM_TIM_Channel3          TIM_Channel_3
 #define		  ADVTIM_TIM_Channel4          TIM_Channel_4
 
-#define		  ADVTIM_TIM_ICPolarity       TIM_ICPolarity_Rising
+#define		  ADVTIM_TIM_ICPolarity       TIM_ICPolarity_Falling//TIM_ICPolarity_BothEdge //TIM_ICPolarity_Rising
 #define		  ADVTIM_TIM_ICSelection      TIM_ICSelection_DirectTI
 #define		  ADVTIM_TIM_ICPrescaler      TIM_ICPSC_DIV1
 #define		  ADVTIM_TIM_ICFilter         0x0;
 
 
 
-#define		  ADVTIM_TIM_Channel          ADVTIM_TIM_Channel1
+#define		  ADVTIM_TIM_Channel          ADVTIM_TIM_Channel2
 #define		  ADVTIM_TIM_TRGOSOURCE       TIM_TRGOSource_Reset
 
 #define            ADVANCE_TIM_IRQ               ADVTIM_IRQn
-#define            ADVANCE_TIM_IRQHandler        ADVTIM_IRQHandler
+// #define            ADVANCE_TIM_IRQHandler        ADVTIM_IRQHandler
 
 
 /**************************º¯ÊýÉùÃ÷********************************/
@@ -96,5 +96,6 @@ void TEST_ADVTIM_DEADTIME_BREAK(void);
 void TEST_ADVTIM_DEADTIME_BREAK_DEEPSLEEP_Config(void);
 void TEST_ADVTIM_EVENT_GENERATION_Config(void);
 void TEST_ADVTIM_ETR_FUNCTION_Config(void);
+void ADVTIM_CAPTUREMODE_Config(void);
 
 #endif	/* __BSP_ADVANCETIME_H */

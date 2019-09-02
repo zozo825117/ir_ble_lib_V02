@@ -3,9 +3,11 @@
 
 //uint16_t delay_cycle;
 
+uint16_t SystemCoreClockMhz;
+
 void SysTick_Configuration(void)
 {
-
+		SystemCoreClockMhz = SystemCoreClock/1000000;
     SysTick->VAL = 0;                     //当前值寄存器
 
 //    SysTick_SetReloadValue(0xFFFFFE);		//重装载值
@@ -15,7 +17,7 @@ void SysTick_Configuration(void)
 
     // SysTick_CLKSourceConfig(SysTick_ClkSource_ExtRefClk_HSI);//选择时钟源
     SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK);//选择时钟源
-    
+	// SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);//选择时钟源
 
     SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;			//Systick 中断使能位
     SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;                	//使能 SysTick计数器
@@ -59,11 +61,36 @@ void SysTick_Configuration(void)
 /**
  * 功能：延时
  */
+// void delay_us(uint32_t u32Cnt)
+// {
+//     uint32_t u32end;
+// 	u32end = 0x1000000 - SystemCoreClock/1000000;
+	
+//     while(u32Cnt-- > 0)
+//     {
+//         SysTick->VAL = 0;
+   
+//         while(SysTick->VAL > u32end)
+//         {
+//             ;
+//         }
+//     }
+// }
+
 void delay_us(uint32_t u32Cnt)
 {
     uint32_t u32end;
-	u32end = 0x1000000 - SystemCoreClock/1000000;
-	
+    
+    // if(u32Cnt > 10){
+    //     u32end = 0x1000000 - SystemCoreClock/100000;
+    //     u32Cnt /= 10;
+    // }else{
+    //     u32end = 0x1000000 - SystemCoreClock/1000000;
+    // }
+
+    u32end = 0x1000000 - SystemCoreClockMhz*u32Cnt;   /* 最大范围 2796202 us */
+    u32Cnt = 1;
+   
     while(u32Cnt-- > 0)
     {
         SysTick->VAL = 0;

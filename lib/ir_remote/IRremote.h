@@ -24,14 +24,14 @@
 // #define TEST
 
 // Results returned from the decoder
-struct decode_results {
+typedef struct _decode_results{
   int decode_type; // NEC, SONY, RC5, UNKNOWN
   unsigned int panasonicAddress; // This is only used for decoding Panasonic data
   unsigned long value; // Decoded value
   int bits; // Number of bits in decoded value
   volatile unsigned int *rawbuf; // Raw intervals in .5 us ticks
   int rawlen; // Number of records in rawbuf.
-};
+}decode_results;
 
 // Values for decode_type
 #define NEC 1
@@ -50,30 +50,29 @@ struct decode_results {
 #define REPEAT 0xffffffff
 
 // main class for receiving IR
-struct IRrecv
+typedef struct _IRrecv
 {
 // public:
-  void (*IRrecv)(int recvpin);
+  void (*_IRrecv)(int recvpin);
   void (*blink13)(int blinkflag);
   int  (*decode)(decode_results *results);
-  void (*enableIRIn)();
+  void (*enableIRIn)(void);
   void (*resume)();
 // private:
   // These are called by decode
   int  (*getRClevel)(decode_results *results, int *offset, int *used, int t1);
-  long (*decodeNEC)(decode_results *results);
-  long (*decodeSony)(decode_results *results);
-  long (*decodeSanyo)(decode_results *results);
-  long (*decodeMitsubishi)(decode_results *results);
-  long (*decodeRC5)(decode_results *results);
-  long (*decodeRC6)(decode_results *results);
-  long (*decodePanasonic)(decode_results *results);
-  long (*decodeJVC)(decode_results *results);
-  long (*decodeHash)(decode_results *results);
-  int (*compare)(unsigned int oldval, unsigned int newval);
+  int (*decodeNEC)(decode_results *results);
+  int (*decodeSony)(decode_results *results);
+  int (*decodeSanyo)(decode_results *results);
+  int (*decodeMitsubishi)(decode_results *results);
+  int (*decodeRC5)(decode_results *results);
+  int (*decodeRC6)(decode_results *results);
+  int (*decodePanasonic)(decode_results *results);
+  int (*decodeJVC)(decode_results *results);
+  // int (*decodeHash)(decode_results *results);
+  // int (*compare)(unsigned int oldval, unsigned int newval);
 
-} 
-;
+}IRrecv;
 
 // Only used for testing; can remove virtual for shorter code
 #ifdef TEST
@@ -82,10 +81,10 @@ struct IRrecv
 #define VIRTUAL
 #endif
 
-struct IRsend
+typedef struct _IRsend
 {
 // public:
-  void (*IRsend)(){};
+  void (*IRsend)();
   void (*sendNEC)(unsigned long data, int nbits);
   void (*sendSony)(unsigned long data, int nbits);
   // Neither Sanyo nor Mitsubishi send is implemented yet
@@ -100,10 +99,9 @@ struct IRsend
   void (*sendJVC)(unsigned long data, int nbits, int repeat); // *Note instead of sending the REPEAT constant if you want the JVC repeat signal sent, send the original code value and change the repeat argument from 0 to 1. JVC protocol repeats by skipping the header NOT by sending a separate code value like NEC does.
   // private:
   void (*enableIROut)(int khz);
-  VIRTUAL void (*mark)(int usec);
-  VIRTUAL void (*space)(int usec);
-}
-;
+  void (*mark)(int usec);
+  void (*space)(int usec);
+}IRsend;
 
 // Some useful constants
 
@@ -113,5 +111,10 @@ struct IRsend
 // Marks tend to be 100us too long, and spaces 100us too short
 // when received due to sensor lag.
 #define MARK_EXCESS 100
+
+// extern IRrecv irrecv;
+// extern IRsend irsend;
+
+void IRSetFunction(IRrecv *irrecv, IRsend *irsend);
 
 #endif

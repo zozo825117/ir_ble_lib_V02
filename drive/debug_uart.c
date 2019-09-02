@@ -52,7 +52,7 @@ void Debug_Print_Init(void)
 
 	
 	//将USART Tx的GPIO配置为推挽复用模式
-  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+  	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStruct.GPIO_Pin = DEBUG_UART_RX_GPIO_PIN;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
@@ -61,7 +61,7 @@ void Debug_Print_Init(void)
 	
 	
 	  //uart GPIO管脚配置
-  GPIO_PinAFConfig(DEBUG_UART_RX_GPIO_PORT,DEBUG_UART_RX_PIN_SOURCE,DEBUG_UART_RX_AF_VALUE); //RX
+  	GPIO_PinAFConfig(DEBUG_UART_RX_GPIO_PORT,DEBUG_UART_RX_PIN_SOURCE,DEBUG_UART_RX_AF_VALUE); //RX
 	GPIO_PinAFConfig(DEBUG_UART_TX_GPIO_PORT,DEBUG_UART_TX_PIN_SOURCE,DEBUG_UART_TX_AF_VALUE); //TX
 
 

@@ -23,6 +23,9 @@ uint32_t ulCaptureCC2Old = 0;
 uint32_t ulCaptureCC3Old = 0;
 uint32_t ulCaptureCC4Old = 0;
 
+uint32_t CaptureValue_Buf[100];
+uint32_t ulFrequencyCH2_Buf[100];
+uint8_t cap_cnt=0;
 
 static void DELAYCELL(uint32_t count)
 {
@@ -103,33 +106,33 @@ static void DeepSleep(void)
 	
 }
 
-// ÖÐ¶ÏÓÅÏÈ¼¶ÅäÖÃ
+// ä¸­æ–­ä¼˜å…ˆçº§é…ç½®
 static void ADVANCE_TIM_NVIC_Config(void)
 {
     NVIC_InitTypeDef NVIC_InitStructure; 
-    // ÉèÖÃÖÐ¶Ï×éÎª0
+    // è®¾ç½®ä¸­æ–­ç»„ä¸º0
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);		
-		// ÉèÖÃÖÐ¶ÏÀ´Ô´
+		// è®¾ç½®ä¸­æ–­æ¥æº
 	  NVIC_InitStructure.NVIC_IRQChannel = ADVANCE_TIM_IRQ ;	
-		// ÉèÖÃÖ÷ÓÅÏÈ¼¶Îª 0
+		// è®¾ç½®ä¸»ä¼˜å…ˆçº§ä¸º 0
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;	 
-	  // ÉèÖÃÇÀÕ¼ÓÅÏÈ¼¶Îª3
+	  // è®¾ç½®æŠ¢å ä¼˜å…ˆçº§ä¸º3
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;	
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 }
 
 ///*
-// * ×¢Òâ£ºTIM_TimeBaseInitTypeDef½á¹¹ÌåÀïÃæÓÐ5¸ö³ÉÔ±£¬TIM6ºÍTIM7µÄ¼Ä´æÆ÷ÀïÃæÖ»ÓÐ
-// * TIM_PrescalerºÍTIM_Period£¬ËùÒÔÊ¹ÓÃTIM6ºÍTIM7µÄÊ±ºòÖ»Ðè³õÊ¼»¯ÕâÁ½¸ö³ÉÔ±¼´¿É£¬
-// * ÁíÍâÈý¸ö³ÉÔ±ÊÇÍ¨ÓÃ¶¨Ê±Æ÷ºÍ¸ß¼¶¶¨Ê±Æ÷²ÅÓÐ.
+// * æ³¨æ„ï¼šTIM_TimeBaseInitTypeDefç»“æž„ä½“é‡Œé¢æœ‰5ä¸ªæˆå‘˜ï¼ŒTIM6å’ŒTIM7çš„å¯„å­˜å™¨é‡Œé¢åªæœ‰
+// * TIM_Prescalerå’ŒTIM_Periodï¼Œæ‰€ä»¥ä½¿ç”¨TIM6å’ŒTIM7çš„æ—¶å€™åªéœ€åˆå§‹åŒ–è¿™ä¸¤ä¸ªæˆå‘˜å³å¯ï¼Œ
+// * å¦å¤–ä¸‰ä¸ªæˆå‘˜æ˜¯é€šç”¨å®šæ—¶å™¨å’Œé«˜çº§å®šæ—¶å™¨æ‰æœ‰.
 // *-----------------------------------------------------------------------------
 // *typedef struct
-// *{ TIM_Prescaler            ¶¼ÓÐ
-// *	TIM_CounterMode			     TIMx,x[6,7]Ã»ÓÐ£¬ÆäËû¶¼ÓÐ
-// *  TIM_Period               ¶¼ÓÐ
-// *  TIM_ClockDivision        TIMx,x[6,7]Ã»ÓÐ£¬ÆäËû¶¼ÓÐ
-// *  TIM_RepetitionCounter    TIMx,x[1,8,15,16,17]²ÅÓÐ
+// *{ TIM_Prescaler            éƒ½æœ‰
+// *	TIM_CounterMode			     TIMx,x[6,7]æ²¡æœ‰ï¼Œå…¶ä»–éƒ½æœ‰
+// *  TIM_Period               éƒ½æœ‰
+// *  TIM_ClockDivision        TIMx,x[6,7]æ²¡æœ‰ï¼Œå…¶ä»–éƒ½æœ‰
+// *  TIM_RepetitionCounter    TIMx,x[1,8,15,16,17]æ‰æœ‰
 // *}TIM_TimeBaseInitTypeDef; 
 // *-----------------------------------------------------------------------------
 // */
@@ -137,13 +140,13 @@ void TEST_TIM_Mode_Config(void)
 {
 		ADVTIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;	
 
-	   /*¸´Î»¸ß¼¶TIM*/
+	   /*å¤ä½é«˜çº§TIM*/
    	ADVTIM1_Reset();	
 		ADVTIM1_ReleaseReset();	
 	  ADVTIM2_Reset();	
 		ADVTIM2_ReleaseReset();	
 	
-	  /*ÅäÖÃ¸ß¼¶TIM*/
+	  /*é…ç½®é«˜çº§TIM*/
    	TIM_TimeBaseStructure.TIM_Period = ADVICE_TIM_PERIOD;	
     TIM_TimeBaseStructure.TIM_Prescaler = ADVICE_TIM_PRESCALER;		
     TIM_TimeBaseStructure.TIM_ClockDivision = ADVICE_TIM_CLKDIV;			
@@ -151,18 +154,18 @@ void TEST_TIM_Mode_Config(void)
 		TIM_TimeBaseStructure.TIM_RepetitionCounter = ADVICE_TIM_REPETITONCOUNTER;			
 	  ADVTIM_TimeBaseInit(ADVICE_TIMx, &TIM_TimeBaseStructure);	
 	
-	  /*´ò¿ª×Ô¶¯×°ÔØ¹¦ÄÜ*/
+	  /*æ‰“å¼€è‡ªåŠ¨è£…è½½åŠŸèƒ½*/
 		ADVTIM_ARRPreloadConfig(ADVICE_TIMx, ADVTIM_ARRPRELOAD_EN);
 	
-	  /*Çå³ýÖÐ¶Ï±êÖ¾Î»*/
+	  /*æ¸…é™¤ä¸­æ–­æ ‡å¿—ä½*/
     ADVTIM_ClearFlag(ADVICE_TIMx, ADVTIM_UPDATA_FLAG);
 	
-	  /*ÅäÖÃÖÐ¶Ï*/
+	  /*é…ç½®ä¸­æ–­*/
 		ADVANCE_TIM_NVIC_Config();
     ADVTIM_ITConfig(ADVICE_TIMx,ADVTIM_IT_FLAG,ADVTIM_IT_UPDATE_EN);
 
-//    /*´ò¿ª¸ß¼¶TIM¹¦ÄÜ*/
-    ADVTIM_Cmd(ADVICE_TIMx, ENABLE);	
+//    /*æ‰“å¼€é«˜çº§TIMåŠŸèƒ½*/
+//    ADVTIM_Cmd(ADVICE_TIMx, ENABLE);	
 
 }
 
@@ -309,10 +312,10 @@ void TEST_ADVTIM_PWMMODE_Config(void)
 /** @defgroup test_advtim1_capture_mode
   * @{ 
   */
-void TEST_ADVTIM_CAPTUREMODE_Config(void)
+void ADVTIM_CAPTUREMODE_Config(void)
 {	
-   	ADVTIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
-	  ADVTIM_ICInitTypeDef  TIM_ICInitStructure;
+   		ADVTIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
+	  	ADVTIM_ICInitTypeDef  TIM_ICInitStructure;
 		
 		/* Time Base configuration */
 		TIM_TimeBaseStructure.TIM_Prescaler = ADVICE_TIM_PRESCALER;
@@ -322,37 +325,42 @@ void TEST_ADVTIM_CAPTUREMODE_Config(void)
 		TIM_TimeBaseStructure.TIM_RepetitionCounter = ADVICE_TIM_REPETITONCOUNTER;	
 		ADVTIM_TimeBaseInit(ADVICE_TIMx, &TIM_TimeBaseStructure);	
 		
-		/*ÅäÖÃICInitStructure½á¹¹Ìå*/
-		TIM_ICInitStructure.TIM_Channel = ADVTIM_TIM_Channel1;
+		/*é…ç½®ICInitStructureç»“æž„ä½“*/
+		TIM_ICInitStructure.TIM_Channel = ADVTIM_TIM_Channel;
 		TIM_ICInitStructure.TIM_ICPolarity = ADVTIM_TIM_ICPolarity;
 		TIM_ICInitStructure.TIM_ICSelection = ADVTIM_TIM_ICSelection;	
 		TIM_ICInitStructure.TIM_ICPrescaler = ADVTIM_TIM_ICPrescaler;
 		TIM_ICInitStructure.TIM_ICFilter = ADVTIM_TIM_ICFilter;
-		
-
-		
 		ADVTIM_ICInit(ADVICE_TIMx, &TIM_ICInitStructure);
+	
+	
+	  	/*é…ç½®ç®¡è„šå¤ç”¨*/
+	  	GPIO_PinAFConfig(ADVTIM_TIM_CAPTURE_GPIOx,ADVTIM_TIM_CAPTURE_PIN_SOURCE,ADVTIM_TIM_AF_VALUE);
+	
+		// switch(ADVTIM_TIM_Channel)
+		// {
+		// 	case 0x00:
+		// 		/* Enable the CC1 Interrupt Request */
+		// 		ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC1, ENABLE);	
+		// 		break;
+		// 	case 0x04:
+		// 		/* Enable the CC2 Interrupt Request */
+		// 		ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC2, ENABLE);			
+		// 		break;
+		// 	case 0x08:
+		// 		/* Enable the CC3 Interrupt Request */
+		// 		ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC3, ENABLE);				
+		// 		break;
+		// 	case 0x0C:
+		// 		/* Enable the CC4 Interrupt Request */
+		// 		ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC4, ENABLE);				
+		// 		break;
+		// 	default:
+		// 		break;
+		// }
 		
-		TIM_ICInitStructure.TIM_Channel = ADVTIM_TIM_Channel2;	
-		ADVTIM_ICInit(ADVICE_TIMx, &TIM_ICInitStructure);	
-
-		TIM_ICInitStructure.TIM_Channel = ADVTIM_TIM_Channel3;	
-		ADVTIM_ICInit(ADVICE_TIMx, &TIM_ICInitStructure);	
-	
-		TIM_ICInitStructure.TIM_Channel = ADVTIM_TIM_Channel4;	
-		ADVTIM_ICInit(ADVICE_TIMx, &TIM_ICInitStructure);		
-	
-	  /*ÅäÖÃ¹Ü½Å¸´ÓÃ*/
-	  GPIO_PinAFConfig(ADVTIM_TIM_CAPTURE_GPIOx,ADVTIM_TIM_CAPTURE_PIN_SOURCE,ADVTIM_TIM_AF_VALUE);
-	
-		/* Enable the CC1 Interrupt Request */
-		ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC1, ENABLE);	
-		/* Enable the CC2 Interrupt Request */
-		ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC2, ENABLE);	
-		/* Enable the CC3 Interrupt Request */
-		ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC3, ENABLE);	
-		/* Enable the CC4 Interrupt Request */
-		ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC4, ENABLE);			
+//		ADVTIM_ITConfig(ADVICE_TIMx, ADVTIM_IT_FLAG, ENABLE);			
+		
 		ADVICE_TIMx->SR = 0x0000;	
 		
 		ADVANCE_TIM_NVIC_Config();
@@ -401,7 +409,77 @@ void TEST_ADVTIM_CAPTUREMODE_Config(void)
 		return ;
 }
 
+/** @defgroup test_advtim1_capture_mode
+  * @{ 
+  */
+void TEST_ADVTIM_CAPTUREMODE_Config(void)
+{	
+   		ADVTIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
+	  	ADVTIM_ICInitTypeDef  TIM_ICInitStructure;
+		
+		/* Time Base configuration */
+		TIM_TimeBaseStructure.TIM_Prescaler = ADVICE_TIM_PRESCALER;
+		TIM_TimeBaseStructure.TIM_CounterMode = ADVICE_TIM_COUNTERMODE;
+		TIM_TimeBaseStructure.TIM_Period = ADVICE_TIM_PERIOD;
+		TIM_TimeBaseStructure.TIM_ClockDivision = ADVICE_TIM_CLKDIV;
+		TIM_TimeBaseStructure.TIM_RepetitionCounter = ADVICE_TIM_REPETITONCOUNTER;	
+		ADVTIM_TimeBaseInit(ADVICE_TIMx, &TIM_TimeBaseStructure);	
+		
+		/*é…ç½®ICInitStructureç»“æž„ä½“*/
+		TIM_ICInitStructure.TIM_Channel = ADVTIM_TIM_Channel1;
+		TIM_ICInitStructure.TIM_ICPolarity = ADVTIM_TIM_ICPolarity;
+		TIM_ICInitStructure.TIM_ICSelection = ADVTIM_TIM_ICSelection;	
+		TIM_ICInitStructure.TIM_ICPrescaler = ADVTIM_TIM_ICPrescaler;
+		TIM_ICInitStructure.TIM_ICFilter = ADVTIM_TIM_ICFilter;
+		
 
+		
+		ADVTIM_ICInit(ADVICE_TIMx, &TIM_ICInitStructure);
+		
+		TIM_ICInitStructure.TIM_Channel = ADVTIM_TIM_Channel2;	
+		ADVTIM_ICInit(ADVICE_TIMx, &TIM_ICInitStructure);	
+
+		TIM_ICInitStructure.TIM_Channel = ADVTIM_TIM_Channel3;	
+		ADVTIM_ICInit(ADVICE_TIMx, &TIM_ICInitStructure);	
+	
+		TIM_ICInitStructure.TIM_Channel = ADVTIM_TIM_Channel4;	
+		ADVTIM_ICInit(ADVICE_TIMx, &TIM_ICInitStructure);		
+	
+	  	/*é…ç½®ç®¡è„šå¤ç”¨*/
+	  	GPIO_PinAFConfig(ADVTIM_TIM_CAPTURE_GPIOx,ADVTIM_TIM_CAPTURE_PIN_SOURCE,ADVTIM_TIM_AF_VALUE);
+	
+		switch(ADVTIM_TIM_Channel)
+		{
+			case 0x00:
+				/* Enable the CC1 Interrupt Request */
+				ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC1, ENABLE);	
+				break;
+			case 0x04:
+				/* Enable the CC2 Interrupt Request */
+				ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC2, ENABLE);			
+				break;
+			case 0x08:
+				/* Enable the CC3 Interrupt Request */
+				ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC3, ENABLE);				
+				break;
+			case 0x0C:
+				/* Enable the CC4 Interrupt Request */
+				ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC4, ENABLE);				
+				break;
+			default:
+				break;
+		}	
+
+		ADVICE_TIMx->SR = 0x0000;	
+		
+		ADVANCE_TIM_NVIC_Config();
+		
+		/* ADVTIM1 enable counter */
+		ADVTIM_Cmd(ADVICE_TIMx, ENABLE);	
+		
+
+		return ;
+}
 
 /** @defgroup test_advtim1_single_capture_mode
   * @{ 
@@ -431,7 +509,7 @@ void TEST_ADVTIM_SINGLECAPTUREMODE_Config(void)
 		TIM_TimeBaseStructure.TIM_ClockDivision = ADVICE_TIM_CLKDIV;
 		TIM_TimeBaseStructure.TIM_RepetitionCounter = ADVICE_TIM_REPETITONCOUNTER;	
 		ADVTIM_TimeBaseInit(ADVICE_TIMx, &TIM_TimeBaseStructure);	
-    /*ÅäÖÃICInitStructure½á¹¹Ìå*/
+    /*é…ç½®ICInitStructureç»“æž„ä½“*/
 		TIM_ICInitStructure.TIM_Channel = ADVTIM_TIM_Channel;
 		TIM_ICInitStructure.TIM_ICPolarity = ADVTIM_TIM_ICPolarity;
 		TIM_ICInitStructure.TIM_ICSelection = ADVTIM_TIM_ICSelection;	
@@ -753,7 +831,7 @@ void TEST_ADVTIM_DEADTIME_BREAK(void)
 	TIM_OCInitStructure.TIM_Pulse = 0x90;	
 	ADVTIM_OC4Init(ADVICE_TIMx, &TIM_OCInitStructure);	
 	
-	/*ÅäÖÃBDTR¼Ä´æÆ÷*/
+	/*é…ç½®BDTRå¯„å­˜å™¨*/
   TIM_BDTRInitStructure.TIM_OSSRState = TIM_OSSRState_Enable;
   TIM_BDTRInitStructure.TIM_OSSIState = TIM_OSSIState_Enable;
   TIM_BDTRInitStructure.TIM_LOCKLevel = TIM_LOCKLevel_1;
@@ -900,7 +978,7 @@ void TEST_ADVTIM_ETR_FUNCTION_Config(void)
 		ADVTIM1_ReleaseReset();	
 		NVIC_EnableIRQ(ADVANCE_TIM_IRQ);	
 	
-	  /*ÅäÖÃTIM_TimeBaseStructure½á¹¹Ìå*/
+	  /*é…ç½®TIM_TimeBaseStructureç»“æž„ä½“*/
 		TIM_TimeBaseStructure.TIM_Period=ADVICE_TIM_PERIOD;			
 		TIM_TimeBaseStructure.TIM_Prescaler= ADVICE_TIM_PRESCALER;	
 		TIM_TimeBaseStructure.TIM_ClockDivision=ADVICE_TIM_CLKDIV;		
@@ -918,8 +996,9 @@ void TEST_ADVTIM_ETR_FUNCTION_Config(void)
 		return ;
 }
 
+uint8_t cap_start = 0;
 
-/** @defgroup ÖÐ¶Ï·þÎñ×Ó³ÌÐò
+/** @defgroup ä¸­æ–­æœåŠ¡å­ç¨‹åº
   * @{ 
   */
 void ADVANCE_TIM_IRQHandler(void)
@@ -929,9 +1008,13 @@ void ADVANCE_TIM_IRQHandler(void)
 	{	
 		ulIntCntTmp = ADVTIM1->CNT;	
 		ADVTIM_ClearITPendingBit(ADVICE_TIMx , TIM_FLAG_Update);
-		ADVTIM_Cmd(ADVICE_TIMx, DISABLE);	
+//		ADVTIM_Cmd(ADVICE_TIMx, DISABLE);	
 		ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,DISABLE);
+		ADVICE_TIMx->CCER |= (TIM_ICPolarity_Falling<<4);
 	  ucIntServedFlag = 1;	
+		GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
+		cap_start = 0;
+		cap_cnt = 0;
 	}			
 
   if (ADVTIM_GetITStatus(ADVICE_TIMx, TIM_IT_CC1) != RESET)
@@ -948,7 +1031,7 @@ void ADVANCE_TIM_IRQHandler(void)
 //			{
 //			  cnt = 0;
 //        //ADVANCE_TIM->CCER &= ~0x0;
-//					/*±êÖ¾ÖÃ1*/
+//					/*æ ‡å¿—ç½®1*/
 //        ucIntCC1Flag = 0x01;
 //			}
   }	
@@ -956,9 +1039,32 @@ void ADVANCE_TIM_IRQHandler(void)
   {
     ADVTIM_ClearITPendingBit(ADVICE_TIMx, TIM_IT_CC2);
 		ucIntCC2Flag = 1;
-    CaptureValue = ADVTIM_GetCapture2(ADVICE_TIMx);
-		ulFrequencyCH2 = 24000000/(CaptureValue - ulCaptureCC2Old);
-		ulCaptureCC2Old = CaptureValue;		
+		ADVICE_TIMx->CCER ^= (TIM_ICPolarity_Falling<<4);
+		if(cap_start == 0){
+			CaptureValue = 0;
+			ulCaptureCC2Old = 0;
+			ADVICE_TIMx->CNT = 0;
+			ADVTIM_ClearITPendingBit(ADVICE_TIMx , TIM_FLAG_Update);
+			ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,ENABLE);
+			cap_start = 1;
+		}else{
+			CaptureValue = ADVTIM_GetCapture2(ADVICE_TIMx);
+			
+	//		ulFrequencyCH2 = 24000000/(CaptureValue - ulCaptureCC2Old);
+			ulFrequencyCH2 = (CaptureValue - ulCaptureCC2Old)*50;
+			ulCaptureCC2Old = CaptureValue;		
+			
+			CaptureValue_Buf[cap_cnt] = CaptureValue;
+			ulFrequencyCH2_Buf[cap_cnt] = ulFrequencyCH2;
+			
+
+			
+			cap_cnt++;
+			if(cap_cnt == sizeof(CaptureValue_Buf)/4){
+				cap_cnt = 0;
+			}		
+		}
+
   }
   else if (ADVTIM_GetITStatus(ADVICE_TIMx, TIM_IT_CC3) != RESET)
   {
@@ -987,7 +1093,6 @@ void ADVANCE_TIM_IRQHandler(void)
   {
 		ucIntTriggerFlag = 1;
     ADVTIM_ClearITPendingBit(ADVICE_TIMx, TIM_IT_Trigger);
-    GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
   }	
 	
 	if (ADVTIM_GetITStatus(ADVICE_TIMx, TIM_IT_Break) != RESET)

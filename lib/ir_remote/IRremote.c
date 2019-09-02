@@ -20,75 +20,63 @@
 #include "IRremoteInt.h"
 
 #include "debug_uart.h"
+#include "main.h"
 
 // Provides ISR
-#include <avr/interrupt.h>
+// #include <avr/interrupt.h>
 
 volatile irparams_t irparams;
+
+// void _IRrecv(int recvpin);
+void enableIRIn(void);
+void mark(int usec);
+/* Leave pin off for time (given in microseconds) */
+void space(int usec);
+void enableIROut(int khz);
 
 // These versions of MATCH, MATCH_MARK, and MATCH_SPACE are only for debugging.
 // To use them, set DEBUG in IRremoteInt.h
 // Normally macros are used for efficiency
-#ifdef DEBUG
+
 int MATCH(int measured, int desired) {
-  Debug_Print("Testing: %d <= %d <= %d \r\n",(TICKS_LOW(desired), measured, TICKS_HIGH(desired)));
-  // Serial.print("Testing: ");
-  // Serial.print(TICKS_LOW(desired), DEC);
-  // Serial.print(" <= ");
-  // Serial.print(measured, DEC);
-  // Serial.print(" <= ");
-  // Serial.println(TICKS_HIGH(desired), DEC);
+#ifdef DEBUG
+  Debug_Print("Testing: %d <= %d <= %d \r\n",TICKS_LOW(desired), measured, TICKS_HIGH(desired));
+#endif
   return measured >= TICKS_LOW(desired) && measured <= TICKS_HIGH(desired);
 }
 
 int MATCH_MARK(int measured_ticks, int desired_us) {
-  Debug_Print("Testing mark %d vs %d : %d <= %d <= %d \r\n",(
+#ifdef DEBUG
+  Debug_Print("Testing mark %d vs %d : %d <= %d <= %d \r\n",
     measured_ticks * USECPERTICK,
     desired_us,
     TICKS_LOW(desired_us + MARK_EXCESS),
     measured_ticks,
-    TICKS_HIGH(desired_us + MARK_EXCESS)));
-    // Serial.print("Testing mark %d vs %d : %d <= %d <= %d \r\n");
-    // Serial.print(measured_ticks * USECPERTICK, DEC);
-    // Serial.print(" vs ");
-    // Serial.print(desired_us, DEC);
-    // Serial.print(": ");
-    // Serial.print(TICKS_LOW(desired_us + MARK_EXCESS), DEC);
-    // Serial.print(" <= ");
-    // Serial.print(measured_ticks, DEC);
-    // Serial.print(" <= ");
-    // Serial.println(TICKS_HIGH(desired_us + MARK_EXCESS), DEC);
+    TICKS_HIGH(desired_us + MARK_EXCESS));
+#endif
   return measured_ticks >= TICKS_LOW(desired_us + MARK_EXCESS) && measured_ticks <= TICKS_HIGH(desired_us + MARK_EXCESS);
 }
 
 int MATCH_SPACE(int measured_ticks, int desired_us) {
-  Debug_Print("Testing space %d vs %d : %d <= %d <= %d \r\n",(
+#ifdef DEBUG
+  Debug_Print("Testing space %d vs %d : %d <= %d <= %d \r\n",
     measured_ticks * USECPERTICK,
     desired_us,
     TICKS_LOW(desired_us - MARK_EXCESS),
     measured_ticks,
-    TICKS_HIGH(desired_us - MARK_EXCESS)));
-
-  // Serial.print("Testing space ");
-  // Serial.print(measured_ticks * USECPERTICK, DEC);
-  // Serial.print(" vs ");
-  // Serial.print(desired_us, DEC);
-  // Serial.print(": ");
-  // Serial.print(TICKS_LOW(desired_us - MARK_EXCESS), DEC);
-  // Serial.print(" <= ");
-  // Serial.print(measured_ticks, DEC);
-  // Serial.print(" <= ");
-  // Serial.println(TICKS_HIGH(desired_us - MARK_EXCESS), DEC);
+    TICKS_HIGH(desired_us - MARK_EXCESS));
+#endif
   return measured_ticks >= TICKS_LOW(desired_us - MARK_EXCESS) && measured_ticks <= TICKS_HIGH(desired_us - MARK_EXCESS);
 }
-#endif
+
 
 void sendNEC(unsigned long data, int nbits)
 {
+	int i;
   enableIROut(38);
   mark(NEC_HDR_MARK);
   space(NEC_HDR_SPACE);
-  for (int i = 0; i < nbits; i++) {
+  for (i = 0; i < nbits; i++) {
     if (data & TOPBIT) {
       mark(NEC_BIT_MARK);
       space(NEC_ONE_SPACE);
@@ -104,11 +92,12 @@ void sendNEC(unsigned long data, int nbits)
 }
 
 void sendSony(unsigned long data, int nbits) {
+	int i;
   enableIROut(40);
   mark(SONY_HDR_MARK);
   space(SONY_HDR_SPACE);
   data = data << (32 - nbits);
-  for (int i = 0; i < nbits; i++) {
+  for (i = 0; i < nbits; i++) {
     if (data & TOPBIT) {
       mark(SONY_ONE_MARK);
       space(SONY_HDR_SPACE);
@@ -123,8 +112,9 @@ void sendSony(unsigned long data, int nbits) {
 
 void sendRaw(unsigned int buf[], int len, int hz)
 {
+	int i;
   enableIROut(hz);
-  for (int i = 0; i < len; i++) {
+  for (i = 0; i < len; i++) {
     if (i & 1) {
       space(buf[i]);
     } 
@@ -138,12 +128,13 @@ void sendRaw(unsigned int buf[], int len, int hz)
 // Note: first bit must be a one (start bit)
 void sendRC5(unsigned long data, int nbits)
 {
+	int i;
   enableIROut(36);
   data = data << (32 - nbits);
   mark(RC5_T1); // First start bit
   space(RC5_T1); // Second start bit
   mark(RC5_T1); // Second start bit
-  for (int i = 0; i < nbits; i++) {
+  for (i = 0; i < nbits; i++) {
     if (data & TOPBIT) {
       space(RC5_T1); // 1 is space, then mark
       mark(RC5_T1);
@@ -160,14 +151,15 @@ void sendRC5(unsigned long data, int nbits)
 // Caller needs to take care of flipping the toggle bit
 void sendRC6(unsigned long data, int nbits)
 {
+	int i,t;
   enableIROut(36);
   data = data << (32 - nbits);
   mark(RC6_HDR_MARK);
   space(RC6_HDR_SPACE);
   mark(RC6_T1); // start bit
   space(RC6_T1);
-  int t;
-  for (int i = 0; i < nbits; i++) {
+  
+  for (i = 0; i < nbits; i++) {
     if (i == 3) {
       // double-wide trailer bit
       t = 2 * RC6_T1;
@@ -189,11 +181,12 @@ void sendRC6(unsigned long data, int nbits)
   space(0); // Turn off at end
 }
 void sendPanasonic(unsigned int address, unsigned long data) {
+	int i;
     enableIROut(35);
     mark(PANASONIC_HDR_MARK);
     space(PANASONIC_HDR_SPACE);
     
-    for(int i=0;i<16;i++)
+    for(i=0;i<16;i++)
     {
         mark(PANASONIC_BIT_MARK);
         if (address & 0x8000) {
@@ -203,7 +196,7 @@ void sendPanasonic(unsigned int address, unsigned long data) {
         }
         address <<= 1;        
     }    
-    for (int i=0; i < 32; i++) {
+    for (i=0; i < 32; i++) {
         mark(PANASONIC_BIT_MARK);
         if (data & TOPBIT) {
             space(PANASONIC_ONE_SPACE);
@@ -217,13 +210,14 @@ void sendPanasonic(unsigned int address, unsigned long data) {
 }
 void sendJVC(unsigned long data, int nbits, int repeat)
 {
+	int i;
     enableIROut(38);
     data = data << (32 - nbits);
     if (!repeat){
         mark(JVC_HDR_MARK);
         space(JVC_HDR_SPACE); 
     }
-    for (int i = 0; i < nbits; i++) {
+    for (i = 0; i < nbits; i++) {
         if (data & TOPBIT) {
             mark(JVC_BIT_MARK);
             space(JVC_ONE_SPACE); 
@@ -237,19 +231,20 @@ void sendJVC(unsigned long data, int nbits, int repeat)
     mark(JVC_BIT_MARK);
     space(0);
 }
-void mark(int time) {
+
+void mark(int usec) {
   // Sends an IR mark for the specified number of microseconds.
   // The mark output is modulated at the PWM frequency.
   TIMER_ENABLE_PWM; // Enable pin 3 PWM output
-  delayMicroseconds(time);
+  delayMicroseconds(usec);
 }
 
 /* Leave pin off for time (given in microseconds) */
-void space(int time) {
+void space(int usec) {
   // Sends an IR space for the specified number of microseconds.
   // A space is no output, so the PWM output is disabled.
   TIMER_DISABLE_PWM; // Disable pin 3 PWM output
-  delayMicroseconds(time);
+  delayMicroseconds(usec);
 }
 
 void enableIROut(int khz) {
@@ -266,10 +261,11 @@ void enableIROut(int khz) {
 
   
   // Disable the Timer2 Interrupt (which is used for receiving IR)
-  TIMER_DISABLE_INTR; //Timer2 Overflow Interrupt
+  // TIMER_DISABLE_INTR; //Timer2 Overflow Interrupt
+
   
   pinMode(TIMER_PWM_PORT, TIMER_PWM_PIN, OUTPUT);
-  digitalWrite(TIMER_PWM_PORT, TIMER_PWM_PIN, LOW); // When not sending PWM, we want it low
+  digitalWrite(TIMER_PWM_PORT, TIMER_PWM_PIN, HIGH); // When not sending PWM, we want it low
   
   // COM2A = 00: disconnect OC2A
   // COM2B = 00: disconnect OC2B; to send signal set to 10: OC2B non-inverted
@@ -279,27 +275,29 @@ void enableIROut(int khz) {
   // TIMER_CONFIG_KHZ(khz);
 }
 
-void IRrecv(int recvpin)
+void _IRrecv(int recvpin)
 {
   irparams.recvpin = recvpin;
   irparams.blinkflag = 0;
+  TIMER_CONFIG_NORMAL();
 }
 
 // initialization
-void enableIRIn() {
-  cli();
+void enableIRIn(void) {
+  // cli();
   // setup pulse clock timer interrupt
   //Prescale /8 (16M/8 = 0.5 microseconds per tick)
   // Therefore, the timer interval can range from 0.5 to 128 microseconds
   // depending on the reset value (255 to 0)
-  TIMER_CONFIG_NORMAL();
+  // TIMER_CONFIG_NORMAL();
 
   //Timer2 Overflow Interrupt Enable
-  TIMER_ENABLE_INTR;
+  // TIMER_ENABLE_INTR;
+  TIMER_ENABLE();
 
-  TIMER_RESET;
+  // TIMER_RESET;
 
-  sei();  // enable interrupts
+  // sei();  // enable interrupts
 
   // initialize state machine variables
   irparams.rcvstate = STATE_IDLE;
@@ -309,12 +307,21 @@ void enableIRIn() {
   pinMode(IR_REC_PORT, irparams.recvpin, INPUT);
 }
 
+void disableIRIn(){
+  TIMER_DISABLE();
+  irparams.rcvstate = STATE_DISABLE;
+}
+
+int isEnableIRIn() {
+  return (irparams.rcvstate != STATE_DISABLE);
+}
+
 // enable/disable blinking of pin 13 on IR processing
 void blink13(int blinkflag)
 {
   irparams.blinkflag = blinkflag;
-  if (blinkflag)
-    pinMode(BLINKLED_PORT, BLINKLED, OUTPUT);
+//  if (blinkflag)
+//    pinMode(BLINKLED_PORT, BLINKLED, OUTPUT);
 }
 
 // TIMER2 interrupt code to collect raw data.
@@ -324,71 +331,143 @@ void blink13(int blinkflag)
 // First entry is the SPACE between transmissions.
 // As soon as a SPACE gets long, ready is set, state switches to IDLE, timing of SPACE continues.
 // As soon as first MARK arrives, gap width is recorded, ready is cleared, and new logging starts
-ISR(TIMER_INTR_NAME)
+//ISR(TIMER_INTR_NAME)
+void TIMER_INTR_NAME(void)
 {
+  // uint8_t irdata = (uint8_t)digitalRead(IR_REC_PORT, irparams.recvpin);
+  uint8_t irdata;
+	
   TIMER_RESET;
 
-  uint8_t irdata = (uint8_t)digitalRead(IR_REC_PORT, irparams.recvpin);
-
-  irparams.timer++; // One more 50us tick
-  if (irparams.rawlen >= RAWBUF) {
-    // Buffer overflow
+  if( ADVTIM_GetITStatus(ADVICE_TIMx, TIM_IT_Update) != RESET ) 
+  { 
+    // ulIntCntTmp = ADVTIM1->CNT; 
+    ADVTIM_ClearITPendingBit(ADVICE_TIMx , TIM_FLAG_Update);
+//    ADVTIM_Cmd(ADVICE_TIMx, DISABLE); 
+    // ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,DISABLE);
+    TIMER_UPDATA_DISABLE_INTR;
+    ADVICE_TIMx->CCER |= (TIM_ICPolarity_Falling<<4);
     irparams.rcvstate = STATE_STOP;
-  }
-  switch(irparams.rcvstate) {
-  case STATE_IDLE: // In the middle of a gap
-    if (irdata == MARK) {
-      if (irparams.timer < GAP_TICKS) {
-        // Not big enough to be a gap.
+    // ucIntServedFlag = 1;  
+   GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
+    // cap_start = 0;
+    // cap_cnt = 0;
+  } 
+
+	if (ADVTIM_GetITStatus(ADVICE_TIMx, TIM_IT_CC1) != RESET)
+  {
+			ADVTIM_ClearITPendingBit(ADVICE_TIMx, TIM_IT_CC1);
+  }	
+  else if (ADVTIM_GetITStatus(ADVICE_TIMx, TIM_IT_CC2) != RESET)
+  {
+    ADVTIM_ClearITPendingBit(ADVICE_TIMx, TIM_IT_CC2);
+    // ucIntCC2Flag = 1;
+    // ADVICE_TIMx->CCER ^= (TIM_ICPolarity_Falling<<4);
+  //   TOG_TIMER_CAP;
+  //   if(cap_start == 0){
+  //     CaptureValue = 0;
+  //     ulCaptureCC2Old = 0;
+  //     TIMER_RESET;
+  //     TIMER_UPDATA_ENABLE_INTR;
+  //     // ADVICE_TIMx->CNT = 0;
+  //     // ADVTIM_ClearITPendingBit(ADVICE_TIMx , TIM_FLAG_Update);
+  //     // ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,ENABLE);
+  //     cap_start = 1;
+  //   }else{
+  //     CaptureValue = ADVTIM_GetCapture2(ADVICE_TIMx);
+      
+  // //    ulFrequencyCH2 = 24000000/(CaptureValue - ulCaptureCC2Old);
+  //     ulFrequencyCH2 = (CaptureValue - ulCaptureCC2Old)*50;
+  //     ulCaptureCC2Old = CaptureValue;   
+      
+  //     CaptureValue_Buf[cap_cnt] = CaptureValue;
+  //     ulFrequencyCH2_Buf[cap_cnt] = ulFrequencyCH2;
+      
+
+      
+  //     cap_cnt++;
+  //     if(cap_cnt == sizeof(CaptureValue_Buf)/4){
+  //       cap_cnt = 0;
+  //     }   
+  //   }
+
+    // irparams.timer++; // One more 50us tick
+		if(irparams.rcvstate != STATE_DISABLE){
+			irdata = GET_TIMER_CAP_INPUT();
+			irparams.timer = GET_TIMER_CAP();
+			TOG_TIMER_CAP;
+		}
+
+		
+    if (irparams.rawlen >= RAWBUF) {
+      // Buffer overflow
+      irparams.rcvstate = STATE_STOP;
+    }
+    switch(irparams.rcvstate) {
+    case STATE_IDLE: // In the middle of a gap
+      if (irdata == MARK) {
+        if (irparams.timer < GAP_TICKS) {
+          // Not big enough to be a gap.
+          irparams.timer = 0;
+        } 
+        else {
+          // gap just ended, record duration and start recording transmission
+          irparams.rawlen = 0;
+          irparams.rawbuf[irparams.rawlen++] = irparams.timer;
+          irparams.timer = 0;
+          irparams.rcvstate = STATE_MARK;
+        }
+      }else{
+        TIMER_RESET;
+        TIMER_UPDATA_ENABLE_INTR;
+      }
+      break;
+    case STATE_MARK: // timing MARK
+      if (irdata == SPACE) {   // MARK ended, record time
+        irparams.rawbuf[irparams.rawlen++] = irparams.timer;
         irparams.timer = 0;
-      } 
-      else {
-        // gap just ended, record duration and start recording transmission
-        irparams.rawlen = 0;
+        irparams.rcvstate = STATE_SPACE;
+      }
+      break;
+    case STATE_SPACE: // timing SPACE
+      if (irdata == MARK) { // SPACE just ended, record it
         irparams.rawbuf[irparams.rawlen++] = irparams.timer;
         irparams.timer = 0;
         irparams.rcvstate = STATE_MARK;
+      } 
+      else { // SPACE
+        if (irparams.timer > GAP_TICKS) {
+          // big SPACE, indicates gap between codes
+          // Mark current code as ready for processing
+          // Switch to STOP
+          // Don't reset timer; keep counting space width
+          irparams.rcvstate = STATE_STOP;
+        } 
+      }
+      break;
+    case STATE_STOP: // waiting, measuring gap
+      if (irdata == MARK) { // reset gap timer
+        irparams.timer = 0;
+        //test
+          irparams.rcvstate = STATE_IDLE;
+					irparams.rawlen = 0;
+					ADVICE_TIMx->CCER |= (TIM_ICPolarity_Falling<<4);
+      }
+      break;
+    }
+
+    if (irparams.blinkflag) {
+      if (irdata == MARK) {
+        BLINKLED_ON();  // turn pin 13 LED on
+      } 
+      else {
+        BLINKLED_OFF();  // turn pin 13 LED off
       }
     }
-    break;
-  case STATE_MARK: // timing MARK
-    if (irdata == SPACE) {   // MARK ended, record time
-      irparams.rawbuf[irparams.rawlen++] = irparams.timer;
-      irparams.timer = 0;
-      irparams.rcvstate = STATE_SPACE;
-    }
-    break;
-  case STATE_SPACE: // timing SPACE
-    if (irdata == MARK) { // SPACE just ended, record it
-      irparams.rawbuf[irparams.rawlen++] = irparams.timer;
-      irparams.timer = 0;
-      irparams.rcvstate = STATE_MARK;
-    } 
-    else { // SPACE
-      if (irparams.timer > GAP_TICKS) {
-        // big SPACE, indicates gap between codes
-        // Mark current code as ready for processing
-        // Switch to STOP
-        // Don't reset timer; keep counting space width
-        irparams.rcvstate = STATE_STOP;
-      } 
-    }
-    break;
-  case STATE_STOP: // waiting, measuring gap
-    if (irdata == MARK) { // reset gap timer
-      irparams.timer = 0;
-    }
-    break;
   }
-
-  if (irparams.blinkflag) {
-    if (irdata == MARK) {
-      BLINKLED_ON();  // turn pin 13 LED on
-    } 
-    else {
-      BLINKLED_OFF();  // turn pin 13 LED off
-    }
-  }
+	
+	ADVICE_TIMx->SR = 0;
+	
 }
 
 void resume() {
@@ -397,79 +476,11 @@ void resume() {
 }
 
 
-
-// Decodes the received IR message
-// Returns 0 if no data ready, 1 if data ready.
-// Results of decoding are stored in results
-int decode(decode_results *results) {
-  results->rawbuf = irparams.rawbuf;
-  results->rawlen = irparams.rawlen;
-  if (irparams.rcvstate != STATE_STOP) {
-    return ERR;
-  }
-#ifdef DEBUG
-  Debug_Print("Attempting NEC decode");
-#endif
-  if (decodeNEC(results)) {
-    return DECODED;
-  }
-#ifdef DEBUG
-  Debug_Print("Attempting Sony decode");
-#endif
-  if (decodeSony(results)) {
-    return DECODED;
-  }
-#ifdef DEBUG
-  Debug_Print("Attempting Sanyo decode");
-#endif
-  if (decodeSanyo(results)) {
-    return DECODED;
-  }
-#ifdef DEBUG
-  Debug_Print("Attempting Mitsubishi decode");
-#endif
-  if (decodeMitsubishi(results)) {
-    return DECODED;
-  }
-#ifdef DEBUG
-  Debug_Print("Attempting RC5 decode");
-#endif  
-  if (decodeRC5(results)) {
-    return DECODED;
-  }
-#ifdef DEBUG
-  Debug_Print("Attempting RC6 decode");
-#endif 
-  if (decodeRC6(results)) {
-    return DECODED;
-  }
-#ifdef DEBUG
-    Debug_Print("Attempting Panasonic decode");
-#endif 
-    if (decodePanasonic(results)) {
-        return DECODED;
-    }
-#ifdef DEBUG
-    Debug_Print("Attempting JVC decode");
-#endif 
-    if (decodeJVC(results)) {
-        return DECODED;
-    }
-  // decodeHash returns a hash on any input.
-  // Thus, it needs to be last in the list.
-  // If you add any decodes, add them before this.
-  if (decodeHash(results)) {
-    return DECODED;
-  }
-  // Throw away and start over
-  resume();
-  return ERR;
-}
-
 // NECs have a repeat only 4 items long
-long decodeNEC(decode_results *results) {
+int decodeNEC(decode_results *results) {
   long data = 0;
-  int offset = 1; // Skip first space
+  int offset = 0; // Skip first space
+	int i;
   // Initial mark
   if (!MATCH_MARK(results->rawbuf[offset], NEC_HDR_MARK)) {
     return ERR;
@@ -484,7 +495,7 @@ long decodeNEC(decode_results *results) {
     results->decode_type = NEC;
     return DECODED;
   }
-  if (irparams.rawlen < 2 * NEC_BITS + 4) {
+  if (irparams.rawlen < 2 * NEC_BITS + 2) {
     return ERR;
   }
   // Initial space  
@@ -492,7 +503,7 @@ long decodeNEC(decode_results *results) {
     return ERR;
   }
   offset++;
-  for (int i = 0; i < NEC_BITS; i++) {
+  for (i = 0; i < NEC_BITS; i++) {
     if (!MATCH_MARK(results->rawbuf[offset], NEC_BIT_MARK)) {
       return ERR;
     }
@@ -515,12 +526,13 @@ long decodeNEC(decode_results *results) {
   return DECODED;
 }
 
-long decodeSony(decode_results *results) {
+int decodeSony(decode_results *results) {
   long data = 0;
+	int offset = 0; // Dont skip first space, check its size
   if (irparams.rawlen < 2 * SONY_BITS + 2) {
     return ERR;
   }
-  int offset = 0; // Dont skip first space, check its size
+  
 
   // Some Sony's deliver repeats fast after first
   // unfortunately can't spot difference from of repeat from two fast clicks
@@ -569,12 +581,13 @@ long decodeSony(decode_results *results) {
 
 // I think this is a Sanyo decoder - serial = SA 8650B
 // Looks like Sony except for timings, 48 chars of data and time/space different
-long decodeSanyo(decode_results *results) {
+int decodeSanyo(decode_results *results) {
   long data = 0;
+	int offset = 0; // Skip first space
   if (irparams.rawlen < 2 * SANYO_BITS + 2) {
     return ERR;
   }
-  int offset = 0; // Skip first space
+  
   // Initial space  
   /* Put this back in for debugging - note can't use #DEBUG as if Debug on we don't see the repeat cos of the delay
   Serial.print("IR Gap: ");
@@ -632,13 +645,14 @@ long decodeSanyo(decode_results *results) {
 }
 
 // Looks like Sony except for timings, 48 chars of data and time/space different
-long decodeMitsubishi(decode_results *results) {
+int decodeMitsubishi(decode_results *results) {
   // Serial.print("?!? decoding Mitsubishi:");Serial.print(irparams.rawlen); Serial.print(" want "); Serial.println( 2 * MITSUBISHI_BITS + 2);
   long data = 0;
+	int offset = 0; // Skip first space
   if (irparams.rawlen < 2 * MITSUBISHI_BITS + 2) {
     return ERR;
   }
-  int offset = 0; // Skip first space
+  
   // Initial space  
   /* Put this back in for debugging - note can't use #DEBUG as if Debug on we don't see the repeat cos of the delay
   Serial.print("IR Gap: ");
@@ -704,15 +718,16 @@ long decodeMitsubishi(decode_results *results) {
 // t1 is the time interval for a single bit in microseconds.
 // Returns -1 for error (measured time interval is not a multiple of t1).
 int getRClevel(decode_results *results, int *offset, int *used, int t1) {
-  if (*offset >= results->rawlen) {
-    // After end of recorded buffer, assume SPACE.
-    return SPACE;
-  }
+
   int width = results->rawbuf[*offset];
   int val = ((*offset) % 2) ? MARK : SPACE;
   int correction = (val == MARK) ? MARK_EXCESS : - MARK_EXCESS;
 
   int avail;
+	if (*offset >= results->rawlen) {
+	// After end of recorded buffer, assume SPACE.
+	return SPACE;
+}
   if (MATCH(width, t1 + correction)) {
     avail = 1;
   } 
@@ -742,18 +757,19 @@ int getRClevel(decode_results *results, int *offset, int *used, int t1) {
   return val;   
 }
 
-long decodeRC5(decode_results *results) {
-  if (irparams.rawlen < MIN_RC5_SAMPLES + 2) {
-    return ERR;
-  }
+int decodeRC5(decode_results *results) {
   int offset = 1; // Skip gap space
   long data = 0;
   int used = 0;
+	int nbits;
+	if (irparams.rawlen < MIN_RC5_SAMPLES + 2) {
+	return ERR;
+}
   // Get start bits
   if (getRClevel(results, &offset, &used, RC5_T1) != MARK) return ERR;
   if (getRClevel(results, &offset, &used, RC5_T1) != SPACE) return ERR;
   if (getRClevel(results, &offset, &used, RC5_T1) != MARK) return ERR;
-  int nbits;
+  
   for (nbits = 0; offset < irparams.rawlen; nbits++) {
     int levelA = getRClevel(results, &offset, &used, RC5_T1); 
     int levelB = getRClevel(results, &offset, &used, RC5_T1);
@@ -777,11 +793,15 @@ long decodeRC5(decode_results *results) {
   return DECODED;
 }
 
-long decodeRC6(decode_results *results) {
+int decodeRC6(decode_results *results) {
+	long data = 0;
+  int used = 0;
+	int nbits;
+	int offset = 1; // Skip first space
   if (results->rawlen < MIN_RC6_SAMPLES) {
     return ERR;
   }
-  int offset = 1; // Skip first space
+  
   // Initial mark
   if (!MATCH_MARK(results->rawbuf[offset], RC6_HDR_MARK)) {
     return ERR;
@@ -791,12 +811,11 @@ long decodeRC6(decode_results *results) {
     return ERR;
   }
   offset++;
-  long data = 0;
-  int used = 0;
+
   // Get start bit (1)
   if (getRClevel(results, &offset, &used, RC6_T1) != MARK) return ERR;
   if (getRClevel(results, &offset, &used, RC6_T1) != SPACE) return ERR;
-  int nbits;
+  
   for (nbits = 0; offset < results->rawlen; nbits++) {
     int levelA, levelB; // Next two levels
     levelA = getRClevel(results, &offset, &used, RC6_T1); 
@@ -827,9 +846,10 @@ long decodeRC6(decode_results *results) {
   results->decode_type = RC6;
   return DECODED;
 }
-long decodePanasonic(decode_results *results) {
+int decodePanasonic(decode_results *results) {
     unsigned long long data = 0;
     int offset = 1;
+		int i;
     
     if (!MATCH_MARK(results->rawbuf[offset], PANASONIC_HDR_MARK)) {
         return ERR;
@@ -841,7 +861,7 @@ long decodePanasonic(decode_results *results) {
     offset++;
     
     // decode address
-    for (int i = 0; i < PANASONIC_BITS; i++) {
+    for (i = 0; i < PANASONIC_BITS; i++) {
         if (!MATCH_MARK(results->rawbuf[offset++], PANASONIC_BIT_MARK)) {
             return ERR;
         }
@@ -860,9 +880,11 @@ long decodePanasonic(decode_results *results) {
     results->bits = PANASONIC_BITS;
     return DECODED;
 }
-long decodeJVC(decode_results *results) {
+
+int decodeJVC(decode_results *results) {
     long data = 0;
     int offset = 1; // Skip first space
+		int i;
     // Check for repeat
     if (irparams.rawlen - 1 == 33 &&
         MATCH_MARK(results->rawbuf[offset], JVC_BIT_MARK) &&
@@ -885,7 +907,7 @@ long decodeJVC(decode_results *results) {
         return ERR;
     }
     offset++;
-    for (int i = 0; i < JVC_BITS; i++) {
+    for (i = 0; i < JVC_BITS; i++) {
         if (!MATCH_MARK(results->rawbuf[offset], JVC_BIT_MARK)) {
             return ERR;
         }
@@ -912,6 +934,80 @@ long decodeJVC(decode_results *results) {
     return DECODED;
 }
 
+// Decodes the received IR message
+// Returns 0 if no data ready, 1 if data ready.
+// Results of decoding are stored in results
+int decode(decode_results *results) {
+
+  if(!isEnableIRIn())
+  {
+    return ERR;
+  }
+
+  results->rawbuf = irparams.rawbuf;
+  results->rawlen = irparams.rawlen;
+  if (irparams.rcvstate != STATE_STOP) {
+    return ERR;
+  }
+#ifdef DEBUG
+  Debug_Print("Attempting NEC decode");
+#endif
+  if (decodeNEC(results)) {
+    return DECODED;
+  }
+#ifdef DEBUG
+  Debug_Print("Attempting Sony decode");
+#endif
+  if (decodeSony(results)) {
+    return DECODED;
+  }
+#ifdef DEBUG
+  Debug_Print("Attempting Sanyo decode");
+#endif
+  if (decodeSanyo(results)) {
+    return DECODED;
+  }
+#ifdef DEBUG
+  Debug_Print("Attempting Mitsubishi decode");
+#endif
+  if (decodeMitsubishi(results)) {
+    return DECODED;
+  }
+#ifdef DEBUG
+  Debug_Print("Attempting RC5 decode");
+#endif  
+  if (decodeRC5(results)) {
+    return DECODED;
+  }
+#ifdef DEBUG
+  Debug_Print("Attempting RC6 decode");
+#endif 
+  if (decodeRC6(results)) {
+    return DECODED;
+  }
+#ifdef DEBUG
+    Debug_Print("Attempting Panasonic decode");
+#endif 
+    if (decodePanasonic(results)) {
+        return DECODED;
+    }
+#ifdef DEBUG
+    Debug_Print("Attempting JVC decode");
+#endif 
+    if (decodeJVC(results)) {
+        return DECODED;
+    }
+  // decodeHash returns a hash on any input.
+  // Thus, it needs to be last in the list.
+  // If you add any decodes, add them before this.
+  // if (decodeHash(results)) {
+  //   return DECODED;
+  // }
+  // Throw away and start over
+  resume();
+  return ERR;
+}
+
 /* -----------------------------------------------------------------------
  * hashdecode - decode an arbitrary IR code.
  * Instead of decoding using a standard encoding scheme
@@ -929,42 +1025,43 @@ long decodeJVC(decode_results *results) {
 // Compare two tick values, returning 0 if newval is shorter,
 // 1 if newval is equal, and 2 if newval is longer
 // Use a tolerance of 20%
-int compare(unsigned int oldval, unsigned int newval) {
-  if (newval < oldval * .8) {
-    return 0;
-  } 
-  else if (oldval < newval * .8) {
-    return 2;
-  } 
-  else {
-    return 1;
-  }
-}
+// int compare(unsigned int oldval, unsigned int newval) {
+//   if (newval < oldval * .8) {
+//     return 0;
+//   } 
+//   else if (oldval < newval * .8) {
+//     return 2;
+//   } 
+//   else {
+//     return 1;
+//   }
+// }
 
 // Use FNV hash algorithm: http://isthe.com/chongo/tech/comp/fnv/#FNV-param
-#define FNV_PRIME_32 16777619
-#define FNV_BASIS_32 2166136261
+// #define FNV_PRIME_32 16777619
+// #define FNV_BASIS_32 2166136261
 
 /* Converts the raw code values into a 32-bit hash code.
  * Hopefully this code is unique for each button.
  * This isn't a "real" decoding, just an arbitrary value.
  */
-long decodeHash(decode_results *results) {
-  // Require at least 6 samples to prevent triggering on noise
-  if (results->rawlen < 6) {
-    return ERR;
-  }
-  long hash = FNV_BASIS_32;
-  for (int i = 1; i+2 < results->rawlen; i++) {
-    int value =  compare(results->rawbuf[i], results->rawbuf[i+2]);
-    // Add value into the hash
-    hash = (hash * FNV_PRIME_32) ^ value;
-  }
-  results->value = hash;
-  results->bits = 32;
-  results->decode_type = UNKNOWN;
-  return DECODED;
-}
+// int decodeHash(decode_results *results) {
+//   long hash = FNV_BASIS_32;
+// 	int i;
+//   // Require at least 6 samples to prevent triggering on noise
+//   if (results->rawlen < 6) {
+//     return ERR;
+//   }
+//   for (i = 1; i+2 < results->rawlen; i++) {
+//     int value =  compare(results->rawbuf[i], results->rawbuf[i+2]);
+//     // Add value into the hash
+//     hash = (hash * FNV_PRIME_32) ^ value;
+//   }
+//   results->value = hash;
+//   results->bits = 32;
+//   results->decode_type = UNKNOWN;
+//   return DECODED;
+// }
 
 /* Sharp and DISH support by Todd Treece ( http://unionbridge.org/design/ircommand )
 
@@ -990,8 +1087,9 @@ linked LIRC file.
 
 void sendSharp(unsigned long data, int nbits) {
   unsigned long invertdata = data ^ SHARP_TOGGLE_MASK;
+	int i;
   enableIROut(38);
-  for (int i = 0; i < nbits; i++) {
+  for (i = 0; i < nbits; i++) {
     if (data & 0x4000) {
       mark(SHARP_BIT_MARK);
       space(SHARP_ONE_SPACE);
@@ -1005,8 +1103,8 @@ void sendSharp(unsigned long data, int nbits) {
   
   mark(SHARP_BIT_MARK);
   space(SHARP_ZERO_SPACE);
-  delay(46);
-  for (int i = 0; i < nbits; i++) {
+  delayMicroseconds(46);
+  for (i = 0; i < nbits; i++) {
     if (invertdata & 0x4000) {
       mark(SHARP_BIT_MARK);
       space(SHARP_ONE_SPACE);
@@ -1019,15 +1117,16 @@ void sendSharp(unsigned long data, int nbits) {
   }
   mark(SHARP_BIT_MARK);
   space(SHARP_ZERO_SPACE);
-  delay(46);
+  delayMicroseconds(46);
 }
 
 void sendDISH(unsigned long data, int nbits)
 {
+	int i;
   enableIROut(56);
   mark(DISH_HDR_MARK);
   space(DISH_HDR_SPACE);
-  for (int i = 0; i < nbits; i++) {
+  for (i = 0; i < nbits; i++) {
     if (data & DISH_TOP_BIT) {
       mark(DISH_BIT_MARK);
       space(DISH_ONE_SPACE);
@@ -1038,4 +1137,36 @@ void sendDISH(unsigned long data, int nbits)
     }
     data <<= 1;
   }
+}
+
+void IRSetFunction(IRrecv *irrecv, IRsend *irsend){
+
+  irrecv->_IRrecv = _IRrecv;
+  irrecv->blink13 = blink13;
+  irrecv->decode = decode;
+  irrecv->enableIRIn = enableIRIn;
+  irrecv->resume = resume;
+  irrecv->getRClevel = getRClevel;
+  irrecv->decodeNEC = decodeNEC;
+  irrecv->decodeSony = decodeSony;
+  irrecv->decodeSanyo = decodeSanyo;
+  irrecv->decodeMitsubishi = decodeMitsubishi;
+  irrecv->decodeRC5 = decodeRC5;
+  irrecv->decodeRC6 = decodeRC6;
+  irrecv->decodePanasonic = decodePanasonic;
+  irrecv->decodeJVC = decodeJVC;
+
+  irsend->sendNEC = sendNEC;
+  irsend->sendSony = sendSony; 
+  irsend->sendRaw = sendRaw; 
+  irsend->sendRC5 = sendRC5; 
+  irsend->sendRC6 = sendRC6; 
+  irsend->sendDISH = sendDISH; 
+  irsend->sendSharp = sendSharp; 
+  irsend->sendPanasonic = sendPanasonic; 
+  irsend->sendJVC = sendJVC; 
+  irsend->enableIROut = enableIROut; 
+  irsend->mark = mark; 
+  irsend->space = space; 
+  
 }
