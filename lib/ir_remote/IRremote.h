@@ -99,6 +99,7 @@ typedef struct _IRsend
   void (*sendJVC)(unsigned long data, int nbits, int repeat); // *Note instead of sending the REPEAT constant if you want the JVC repeat signal sent, send the original code value and change the repeat argument from 0 to 1. JVC protocol repeats by skipping the header NOT by sending a separate code value like NEC does.
   // private:
   void (*enableIROut)(int khz);
+  void (*disableIROut)(int khz);
   void (*mark)(int usec);
   void (*space)(int usec);
 }IRsend;

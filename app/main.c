@@ -29,6 +29,8 @@ uint8_t uart_rx_ok;
 uint8_t rf_tx_len;
 uint8_t test_step = 0;
 
+uint8_t test_send_count = 0;
+
 void Delay(__IO uint32_t nCount)	 //简单的延时函数
 {
 	for(; nCount != 0; nCount--);
@@ -296,6 +298,8 @@ int main( void )
 	}
 
 	IRinit();
+
+	IRdata.cmd = IR_CMD_REC_REPLAY;
 	
 	/*时间获取显示*/
 	while(1)
@@ -311,11 +315,22 @@ int main( void )
 			runTimeTimer = Timer_Get_Time_Stamp();
 		}
 		
-		if(Timer_Time_Elapsed(irTimeTimer,10)){
+		if(Timer_Time_Elapsed(irTimeTimer,1000)){
 			IRloop(&IRdata);
+
+			if(IRdata.cmd == IR_CMD_SEND){
+				if(test_send_count > 10){
+					IRdata.cmd = IR_CMD_REC_REPLAY;
+					test_send_count = 0;
+				} else {
+					test_send_count ++;
+				}
+			}
 			// GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
 			irTimeTimer = Timer_Get_Time_Stamp();
 		}
+
+
 		
 		
 	}

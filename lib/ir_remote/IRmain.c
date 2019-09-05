@@ -156,12 +156,13 @@ void IRinit(void){
   irrecv._IRrecv(IR_REC_PIN);
 
   //test
-  irrecv.enableIRIn(); // Re-enable receiver
+  // irrecv.enableIRIn(); // Re-enable receiver
 
 }
 
 void IRloop(IRdata_t *IRdata) {
   // If button pressed, send the code.
+  static uint8_t replay_bit = 0;
   uint8_t IrState;
 
     switch(IRdata->cmd){
@@ -175,9 +176,13 @@ void IRloop(IRdata_t *IRdata) {
           // codeValue = IRdata->codeValue;
           codeLen = IRdata->codeLen;
           // digitalWrite(STATUS_PIN, HIGH);
-          sendCode(lastIrState == IrState);
+          irsend.enableIROut(38);
+          // sendCode(lastIrState == IrState);
+          sendCode(0);
+          irsend.disableIROut(38);
           // digitalWrite(STATUS_PIN, LOW);
           delayMicroseconds(50); // Wait a bit between retransmissions
+          // replay_bit = 0;
         break;
 
       case IR_CMD_REC:
@@ -187,17 +192,26 @@ void IRloop(IRdata_t *IRdata) {
       case IR_CMD_REC_ENTER:
           Debug_Print("IR_CMD_REC_ENTER\r\n");
           irrecv.enableIRIn(); // Re-enable receiver
+          replay_bit = 0;
         break;
 
       case IR_CMD_REC_EXIT:
+        break;
+
+      case IR_CMD_REC_REPLAY:
+          Debug_Print("IR_CMD_REC_ENTER\r\n");
+          irrecv.enableIRIn(); // Re-enable receiver
+          replay_bit = 1;
         break;
 
       default:
           IrState = IR_CMD_NULL;
         break;
     } 
-
-
+    if(IRdata->cmd != IR_CMD_SEND){
+      IRdata->cmd = IR_CMD_NULL;
+    }
+  
 
   // if (buttonState) {
   //   Debug_Print("Now, sending\r\n");
@@ -210,7 +224,14 @@ void IRloop(IRdata_t *IRdata) {
     // digitalWrite(STATUS_PIN, HIGH);
     storeCode(&results);
     irrecv.resume(); // resume receiver
+    if(replay_bit){
+      IRdata->cmd = IR_CMD_SEND;
+      IRdata->codeType = codeType;
+      memcpy(IRdata->codeValue, (uint8_t*)codeValue, sizeof(codeValue));
+      IRdata->codeLen = codeLen;
+    }
     // digitalWrite(STATUS_PIN, LOW);
   }
+
   lastIrState = IrState;
 }

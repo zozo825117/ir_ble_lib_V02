@@ -22,7 +22,8 @@
 #define IR_CMD_REC          0x02
 #define IR_CMD_REC_ENTER    0x03
 #define IR_CMD_REC_EXIT     0x04
-
+//test
+#define IR_CMD_REC_REPLAY   0x05
 
 typedef struct{
   uint8_t len;

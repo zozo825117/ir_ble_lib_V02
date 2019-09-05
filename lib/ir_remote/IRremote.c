@@ -39,14 +39,14 @@ void enableIROut(int khz);
 // Normally macros are used for efficiency
 
 int MATCH(int measured, int desired) {
-#ifdef DEBUG
+#ifdef DEBUG_1
   Debug_Print("Testing: %d <= %d <= %d \r\n",TICKS_LOW(desired), measured, TICKS_HIGH(desired));
 #endif
   return measured >= TICKS_LOW(desired) && measured <= TICKS_HIGH(desired);
 }
 
 int MATCH_MARK(int measured_ticks, int desired_us) {
-#ifdef DEBUG
+#ifdef DEBUG_1
   Debug_Print("Testing mark %d vs %d : %d <= %d <= %d \r\n",
     measured_ticks * USECPERTICK,
     desired_us,
@@ -58,7 +58,7 @@ int MATCH_MARK(int measured_ticks, int desired_us) {
 }
 
 int MATCH_SPACE(int measured_ticks, int desired_us) {
-#ifdef DEBUG
+#ifdef DEBUG_1
   Debug_Print("Testing space %d vs %d : %d <= %d <= %d \r\n",
     measured_ticks * USECPERTICK,
     desired_us,
@@ -262,8 +262,10 @@ void enableIROut(int khz) {
   
   // Disable the Timer2 Interrupt (which is used for receiving IR)
   // TIMER_DISABLE_INTR; //Timer2 Overflow Interrupt
-
-  
+  if(irparams.rcvstate != STATE_DISABLE){
+      TIMER_DISABLE();
+			irparams.rcvstate = STATE_DISABLE;
+  }
   pinMode(TIMER_PWM_PORT, TIMER_PWM_PIN, OUTPUT);
   digitalWrite(TIMER_PWM_PORT, TIMER_PWM_PIN, HIGH); // When not sending PWM, we want it low
   
@@ -273,6 +275,10 @@ void enableIROut(int khz) {
   // CS2 = 000: no prescaling
   // The top value for the timer.  The modulation frequency will be SYSCLOCK / 2 / OCR2A.
   // TIMER_CONFIG_KHZ(khz);
+}
+
+void disableIROut(int khz) {
+  pinMode(TIMER_PWM_PORT, TIMER_PWM_PIN, INPUT);
 }
 
 void _IRrecv(int recvpin)
@@ -1166,6 +1172,7 @@ void IRSetFunction(IRrecv *irrecv, IRsend *irsend){
   irsend->sendPanasonic = sendPanasonic; 
   irsend->sendJVC = sendJVC; 
   irsend->enableIROut = enableIROut; 
+  irsend->disableIROut = disableIROut; 
   irsend->mark = mark; 
   irsend->space = space; 
   
