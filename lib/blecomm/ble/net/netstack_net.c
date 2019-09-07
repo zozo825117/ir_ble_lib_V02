@@ -244,6 +244,7 @@ static uint8_t net_adv(void)
 	pdu->minor.oper = 0x00;
 	memset(pdu->uuid,0,16);
 	memcpy(pdu->uuid,db_name,strlen((char *)db_name));
+	memcpy(&pdu->uuid[10],local_info.mac_addr,6);
 	if(bleState == BLE_STATE_DISCONNECTED || bleState == BLE_STATE_STOPPED ||
 			bleState == BLE_STATE_INITIALIZING){
 		sending = 0;
