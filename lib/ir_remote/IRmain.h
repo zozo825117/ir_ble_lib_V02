@@ -40,4 +40,5 @@ extern IRdata_t IRdata;
 
 void IRinit(void);
 void IRloop(IRdata_t *IRdata);
+void IRBleCmdRec(uint8_t *data,IRdata_t *IRdata);
 #endif

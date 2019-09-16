@@ -139,7 +139,8 @@ void app_callback(uint32_t event, uint8_t * eventParam)
 					Debug_Print(" %x", eventParam[i+1]);
 				}
 				Debug_Print("\r\n");
-
+				
+				IRBleCmdRec(eventParam, &IRdata);
 				//for ble no deal close
 				timeDisconnectTimer = Timer_Get_Time_Stamp();
 				
@@ -228,14 +229,14 @@ int main( void )
 	RCC->REGLOCK =  0x55aa6698;
 
 	/*打开外部低频时钟*/
-	RCC->REGLOCK = 0x55aa6699;
-	/*设置外部低频时钟寄存器*/
-	RCC->LXTCR =  0x5a690D6F;
-	Delay(10000);
-	/*等待外部低频时钟稳定*/
-	while(!(RCC->LXTCR&0x40)); 
-	/*设置外部低频时钟*/
-	RCC->REGLOCK = 0x55aa6698;
+//	RCC->REGLOCK = 0x55aa6699;
+//	/*设置外部低频时钟寄存器*/
+//	RCC->LXTCR =  0x5a690D6F;
+//	Delay(10000);
+//	/*等待外部低频时钟稳定*/
+//	while(!(RCC->LXTCR&0x40)); 
+//	/*设置外部低频时钟*/
+//	RCC->REGLOCK = 0x55aa6698;
 
 	SystemCoreClock    = 24000000;
 	// SystemCoreClockMhz = SystemCoreClock/1000000;
@@ -271,13 +272,13 @@ int main( void )
 		Debug_Print("Ble_GetMac error\r\n");
 	}
 
-	if(Ble_SetMac(bMacAddr) == BLE_ERROR_OK){
-			Ble_GetMac(mac_buf);
-			Debug_Print("new mac = 0x%x%x%x%x%x%x\r\n", mac_buf[0],mac_buf[1],mac_buf[2],mac_buf[3],mac_buf[4],mac_buf[5]);
-	}
-	else{
-		Debug_Print("Ble_SetMac error\r\n");
-	}
+//	if(Ble_SetMac(bMacAddr) == BLE_ERROR_OK){
+//			Ble_GetMac(mac_buf);
+//			Debug_Print("new mac = 0x%x%x%x%x%x%x\r\n", mac_buf[0],mac_buf[1],mac_buf[2],mac_buf[3],mac_buf[4],mac_buf[5]);
+//	}
+//	else{
+//		Debug_Print("Ble_SetMac error\r\n");
+//	}
 
 	memset(name_buf, 0 , sizeof(name_buf));
 	if(Ble_GetName(name_buf) == BLE_ERROR_OK){
@@ -315,16 +316,17 @@ int main( void )
 			runTimeTimer = Timer_Get_Time_Stamp();
 		}
 		
-		if(Timer_Time_Elapsed(irTimeTimer,1000)){
+		if(Timer_Time_Elapsed(irTimeTimer,100)){
 			IRloop(&IRdata);
 
 			if(IRdata.cmd == IR_CMD_SEND){
-				if(test_send_count > 10){
-					IRdata.cmd = IR_CMD_REC_REPLAY;
-					test_send_count = 0;
-				} else {
-					test_send_count ++;
-				}
+//				if(test_send_count > 10){
+//					IRdata.cmd = IR_CMD_REC_REPLAY;
+//					test_send_count = 0;
+//				} else {
+//					test_send_count ++;
+//				}
+				IRdata.cmd = IR_CMD_REC_REPLAY;
 			}
 			// GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
 			irTimeTimer = Timer_Get_Time_Stamp();

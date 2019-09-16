@@ -162,6 +162,7 @@ void IRinit(void){
 
 void IRloop(IRdata_t *IRdata) {
   // If button pressed, send the code.
+  uint8_t i;
   static uint8_t replay_bit = 0;
   uint8_t IrState;
 
@@ -170,11 +171,19 @@ void IRloop(IRdata_t *IRdata) {
       case IR_CMD_SEND:
           Debug_Print("Now, sending\r\n");
           IrState = IR_CMD_SEND;
-
-          codeType = IRdata->codeType;
-          memcpy((uint8_t*)codeValue, IRdata->codeValue, sizeof(codeValue));
-          // codeValue = IRdata->codeValue;
           codeLen = IRdata->codeLen;
+          codeType = IRdata->codeType;
+          // memcpy((uint8_t*)&codeValue, IRdata->codeValue, sizeof(codeValue)); //codeLen
+          codeValue = 0;
+          for(i=0; i < sizeof(codeValue)-1; i++){
+            codeValue |= IRdata->codeValue[i];
+            codeValue <<= 8;
+          }
+          codeValue |= IRdata->codeValue[sizeof(codeValue)-1];
+
+          Debug_Print("codeLen=%d codeValue=0x%x\r\n", codeLen,codeValue);
+          // codeValue = IRdata->codeValue;
+          
           // digitalWrite(STATUS_PIN, HIGH);
           irsend.enableIROut(38);
           // sendCode(lastIrState == IrState);
@@ -199,7 +208,7 @@ void IRloop(IRdata_t *IRdata) {
         break;
 
       case IR_CMD_REC_REPLAY:
-          Debug_Print("IR_CMD_REC_ENTER\r\n");
+          Debug_Print("IR_CMD_REC_REPLAY\r\n");
           irrecv.enableIRIn(); // Re-enable receiver
           replay_bit = 1;
         break;
@@ -211,6 +220,8 @@ void IRloop(IRdata_t *IRdata) {
     if(IRdata->cmd != IR_CMD_SEND){
       IRdata->cmd = IR_CMD_NULL;
     }
+
+    // IRdata->cmd = IR_CMD_NULL;
   
 
   // if (buttonState) {
@@ -234,4 +245,11 @@ void IRloop(IRdata_t *IRdata) {
   }
 
   lastIrState = IrState;
+}
+
+void IRBleCmdRec(uint8_t *data,IRdata_t *IRdata){
+
+  if(data[1] == IR_CMD_SEND){
+    memcpy((uint8_t *)IRdata, data, 16);
+  }
 }
