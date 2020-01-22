@@ -223,10 +223,10 @@ int main( void )
 	RCC->APBCLKEN =  0xffffffff; //uart,i2c,spi,pca,tim,btim, pwm? iwdt,dwdt,rtc,awk,trim
 	
 	/*CLK TRIMING*/
-	RCC->REGLOCK =  0x55aa6699;
-	RCC->HIRCCR = 0x5a690EE4;
-	RCC->CLKCON  |= 0x5a690005;
-	RCC->REGLOCK =  0x55aa6698;
+	// RCC->REGLOCK =  0x55aa6699;
+	// RCC->HIRCCR = 0x5a690EE4;
+	// RCC->CLKCON  |= 0x5a690005;
+	// RCC->REGLOCK =  0x55aa6698;
 
 	/*打开外部低频时钟*/
 //	RCC->REGLOCK = 0x55aa6699;
@@ -237,6 +237,8 @@ int main( void )
 //	while(!(RCC->LXTCR&0x40)); 
 //	/*设置外部低频时钟*/
 //	RCC->REGLOCK = 0x55aa6698;
+
+	RCC_HIRCTrim(RCC,HIRC24M_TIMVALUE);
 
 	SystemCoreClock    = 24000000;
 	// SystemCoreClockMhz = SystemCoreClock/1000000;
@@ -266,19 +268,19 @@ int main( void )
 	Ble_Init(TIM11,TIMER11_IRQn,0,SystemCoreClock,app_callback);
 
 	if(Ble_GetMac(mac_buf) == BLE_ERROR_OK){
-		Debug_Print("default mac = 0x%x%x%x%x%x%x\r\n", mac_buf[0],mac_buf[1],mac_buf[2],mac_buf[3],mac_buf[4],mac_buf[5]);
+		Debug_Print("default mac = %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac_buf[5],mac_buf[4],mac_buf[3],mac_buf[2],mac_buf[1],mac_buf[0]);
 	}
 	else{
 		Debug_Print("Ble_GetMac error\r\n");
 	}
 
-//	if(Ble_SetMac(bMacAddr) == BLE_ERROR_OK){
-//			Ble_GetMac(mac_buf);
-//			Debug_Print("new mac = 0x%x%x%x%x%x%x\r\n", mac_buf[0],mac_buf[1],mac_buf[2],mac_buf[3],mac_buf[4],mac_buf[5]);
-//	}
-//	else{
-//		Debug_Print("Ble_SetMac error\r\n");
-//	}
+	// if(Ble_SetMac(bMacAddr) == BLE_ERROR_OK){
+	// 		Ble_GetMac(mac_buf);
+	// 		Debug_Print("default mac = %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac_buf[5],mac_buf[4],mac_buf[3],mac_buf[2],mac_buf[1],mac_buf[0]);
+	// }
+	// else{
+	// 	Debug_Print("Ble_SetMac error\r\n");
+	// }
 
 	memset(name_buf, 0 , sizeof(name_buf));
 	if(Ble_GetName(name_buf) == BLE_ERROR_OK){
@@ -298,9 +300,9 @@ int main( void )
 		Debug_Print("Ble_SetName error\r\n");
 	}
 
-	IRinit();
+	//IRinit();
 
-	IRdata.cmd = IR_CMD_REC_REPLAY;
+	//IRdata.cmd = IR_CMD_REC_REPLAY;
 	
 	/*时间获取显示*/
 	while(1)
@@ -317,7 +319,7 @@ int main( void )
 		}
 		
 		if(Timer_Time_Elapsed(irTimeTimer,100)){
-			IRloop(&IRdata);
+			//IRloop(&IRdata);
 
 			if(IRdata.cmd == IR_CMD_SEND){
 //				if(test_send_count > 10){

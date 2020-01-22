@@ -11,29 +11,94 @@
 /* Public include files -----------------------------------------------------*/
 #include "cx32l003.h"
 #include  "cx32l003_gpio.h"
+#include "cx32l003_spi.h"
 
 /* Public Macros/Configuration and Data type --------------------------------*/   
-// #define  WIRE_SPI_MODE4
-#define  WIRE_SPI_MODE3
 
-#define WL1601_CE_Pin   GPIO_Pin_4
-#define WL1601_CE_Port  GPIOC
+// #define WIRE_SPI_MODE3
+#define WIRE_SPI_MODE4
+#define WIRE_SPI_HARDWARE
 
-#define WL1601_CSN_Pin GPIO_Pin_3
-#define WL1601_CSN_Port GPIOA
+#if defined(WIRE_SPI_MODE4)
+// #define WL1601_CE_Pin   GPIO_Pin_4
+// #define WL1601_CE_Port  GPIOC
+// #define WL1601_CE_PinSRC GPIO_PinSource4
 
-#define WL1601_SCK_Pin GPIO_Pin_5
-#define WL1601_SCK_Port GPIOC
+// #define WL1601_PKT_Pin PORT_Pin_3
+// #define WL1601_PKT_Port GPIOC
+// #define WL1601_PKT_PinSRC GPIO_PinSource3
 
-#define WL1601_MOSI_Pin GPIO_Pin_6
-#define WL1601_MOSI_Port GPIOC
-#define WL1601_MOSI_PinSRC  GPIO_PinSource6
+// #define WL1601_MISO_Pin GPIO_Pin_2
+// #define WL1601_MISO_Port GPIOD
+// #define WL1601_MISO_PinSRC GPIO_PinSource2
+// #endif
 
-#define WL1601_MISO_Pin GPIO_Pin_2
-#define WL1601_MISO_Port GPIOD
+// #define WL1601_CSN_Pin GPIO_Pin_3
+// #define WL1601_CSN_Port GPIOA
+// #define WL1601_CSN_PinSRC GPIO_PinSource3
+
+// #define WL1601_SCK_Pin GPIO_Pin_5
+// #define WL1601_SCK_Port GPIOC
+// #define WL1601_SCK_PinSRC GPIO_PinSource5
+
+// #define WL1601_MOSI_Pin GPIO_Pin_6
+// #define WL1601_MOSI_Port GPIOC
+// #define WL1601_MOSI_PinSRC  GPIO_PinSource6
+
+#define WL1601_CE_Pin   GPIO_Pin_6
+#define WL1601_CE_Port  GPIOD
+#define WL1601_CE_PinSRC GPIO_PinSource6
 
 #define WL1601_PKT_Pin PORT_Pin_3
 #define WL1601_PKT_Port GPIOC
+#define WL1601_PKT_PinSRC GPIO_PinSource3
+
+#define WL1601_MISO_Pin GPIO_Pin_2
+#define WL1601_MISO_Port GPIOD
+#define WL1601_MISO_PinSRC GPIO_PinSource2
+#endif
+
+#define WL1601_CSN_Pin GPIO_Pin_5
+#define WL1601_CSN_Port GPIOD
+#define WL1601_CSN_PinSRC GPIO_PinSource5
+
+#define WL1601_SCK_Pin GPIO_Pin_1
+#define WL1601_SCK_Port GPIOA
+#define WL1601_SCK_PinSRC GPIO_PinSource1
+
+#define WL1601_MOSI_Pin GPIO_Pin_3
+#define WL1601_MOSI_Port GPIOD
+#define WL1601_MOSI_PinSRC  GPIO_PinSource3
+
+#if defined(WIRE_SPI_HARDWARE)
+
+//AF定义
+#if defined(WIRE_SPI_HARDWARE)
+// #define      WL1601_CSN_AF_VALUE        GPIO_AF_SPI_NSS_PA3
+// #define      WL1601_SCK_AF_VALUE        GPIO_AF_SPI_CLK_PC5
+// #define      WL1601_MISO_AF_VALUE       GPIO_AF_SPI_MISO_PD2
+// #define      WL1601_MOSI_AF_VALUE       GPIO_AF_SPI_MOSI_PC6
+// #define      WL1601_CSN_AF_VALUE        GPIO_AF_SPI_NSS_PA3
+#define      WL1601_SCK_AF_VALUE        GPIO_AF_SPI_CLK_PA1
+#define      WL1601_MISO_AF_VALUE       GPIO_AF_SPI_MISO_PD2
+#define      WL1601_MOSI_AF_VALUE       GPIO_AF_SPI_MOSI_PD3
+#endif /* defined(WIRE_SPI_HARDWARE) */
+
+
+
+/*SPI接口定义-开头****************************/
+#define      WL1601_SPIx                        SPI
+//SPI PARAMETERS
+#define      WL1601_SPI_MODE          SPI_Mode_Master
+#define      WL1601_SPI_CPOL          SPI_CPOL_Low
+#define      WL1601_SPI_CPHA          SPI_CPHA_2Edge//SPI_CPHA_1Edge
+#define      WL1601_SPI_BAUDRATEPRS   SPI_BaudRatePrescaler_8//SPI_BaudRatePrescaler_32
+
+
+#define      WL1601_SPI_IRQ                SPI0COMB_IRQn
+#define      WL1601_SPI_IRQHandler         SPI0COMB_IRQHandler
+#endif
+
 
 // #define WL1601_CE_Output()          WL1601_CE_Port->DIR |= WL1601_CE_Pin
                                     
@@ -79,18 +144,33 @@
 #define WL1601_MISO_RESET()           WL1601_MISO_Port->DOCL = WL1601_MISO_Pin//PORT_WriteBit(WL1601_MISO_Port,WL1601_MISO_Pin,Bit_RESET)
           
 #ifdef WIRE_SPI_MODE4
-#define  DRVSPI_CE_OUTPUT	    WL1601_CE_Output()
+#define  DRVSPI_CE_OUTPUT	    //WL1601_CE_Output()
 #define  DRVWL1601B_CE0       WL1601B_CE_RESET()//PC3 = 0  	 // >>P4.4
 #define  DRVWL1601B_CE1       WL1601B_CE_SET()//PC3 = 1  	 // >>P4.4
-#else
+#elif  defined(WIRE_SPI_MODE3)
 #define  DRVSPI_CE_OUTPUT  
 #define  DRVWL1601B_CE0    
-#define  DRVWL1601B_CE1                      
+#define  DRVWL1601B_CE1      
+#else
+#error "select hardware here\n"                
 #endif                                    
 
 // #define  DRVSPI_CSN_OUTPUT    WL1601_CSN_Output()
+/* Select WL1670 SPI */
+// #if defined(WIRE_SPI_HARDWARE) && defined(WIRE_SPI_MODE4)
+
+// #define DRVSPI_CSN0  SPI->SSN &= SPI_SSN_Low
+//  // SPI_SSOutputCmd(SPI,ENABLE);  /* CS低电平 */
+
+
+// #define DRVSPI_CSN1  SPI->SSN |= SPI_SSN_High
+//  // SPI_SSOutputCmd(SPI,DISABLE);/* CS 高电平 */
+                                    
+// #else
 #define  DRVSPI_CSN0          WL1601B_CSN_RESET()
 #define  DRVSPI_CSN1          WL1601B_CSN_SET()
+// #endif /* defined(WIRE_SPI_HARDWARE) */                         
+
 
 // #define  DRVSPI_CLK_OUTPUT 	  WL1601_SCK_Output()
 #define  DRVSPI_CLK0       	  WL1601_SCK_RESET()
@@ -114,13 +194,9 @@
     WL1601B_CE_RESET();
 
 
-/* Select WL1670 SPI */
-#define RF_SPI_SELECT() \
-    WL1601B_CSN_SET();
 
-/* Deselect WL1670 SPI */
-#define RF_SPI_DESELECT() \
-    WL1601B_CSN_RESET(); 
+#define RF_SPI_SELECT() DRVSPI_CSN1
+#define RF_SPI_DESELECT() DRVSPI_CSN0
 
 
 /* Public function declaration ----------------------------------------------*/
