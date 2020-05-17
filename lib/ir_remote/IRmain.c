@@ -82,6 +82,9 @@ void storeCode(decode_results *results) {
     } 
     else if (codeType == RC6) {
       Debug_Print("Received RC6: ");
+    } else if (codeType == HS5104) {
+      Debug_Print("Received HS5104: ");
+      Debug_Print("addr=%x cmd=%x ", results->panasonicAddress, results->value & (0x7F));
     } 
     else {
       Debug_Print("Unexpected codeType %d ", codeType);
@@ -131,6 +134,11 @@ void sendCode(int repeat) {
       Debug_Print("Sent RC6 %x\r\n", codeValue);
       // Debug_Print(codeValue, HEX);
     }
+  } else if (codeType == HS5104) {
+    irsend.sendHS5104(codeValue, codeLen);
+    // Debug_Print("Sent Sony ");
+    // Debug_Print(codeValue, HEX);
+    Debug_Print("Sent HS5104 %x\r\n", codeValue);
   } 
   else if (codeType == UNKNOWN /* i.e. raw */) {
     // Assume 38 KHz

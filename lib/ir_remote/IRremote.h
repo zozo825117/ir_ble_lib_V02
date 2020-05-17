@@ -44,6 +44,8 @@ typedef struct _decode_results{
 #define JVC 8
 #define SANYO 9
 #define MITSUBISHI 10
+#define HS5104 12
+//0x11 用于 RGB NEC
 #define UNKNOWN -1
 
 // Decoded value for NEC when a repeat code is received
@@ -87,6 +89,7 @@ typedef struct _IRsend
   void (*IRsend)();
   void (*sendNEC)(unsigned long data, int nbits);
   void (*sendSony)(unsigned long data, int nbits);
+  void (*sendHS5104)(unsigned long data, int nbits);
   // Neither Sanyo nor Mitsubishi send is implemented yet
   //  void sendSanyo(unsigned long data, int nbits);
   //  void sendMitsubishi(unsigned long data, int nbits);
@@ -107,7 +110,7 @@ typedef struct _IRsend
 // Some useful constants
 
 #define USECPERTICK 50  // microseconds per clock interrupt tick
-#define RAWBUF 100 // Length of raw duration buffer
+#define RAWBUF 150 // Length of raw duration buffer
 
 // Marks tend to be 100us too long, and spaces 100us too short
 // when received due to sensor lag.

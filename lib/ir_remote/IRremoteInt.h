@@ -156,6 +156,12 @@
 #define PANASONIC_ONE_SPACE 1244
 #define PANASONIC_ZERO_SPACE 400
 
+#define HS5104_HDR_MARK 1268
+#define HS5104_HDR_SPACE 424
+#define HS5104_BIT_MARK 600
+#define HS5104_ONE_SPACE 1268
+#define HS5104_ZERO_SPACE 424
+
 #define JVC_HDR_MARK 8000
 #define JVC_HDR_SPACE 4000
 #define JVC_BIT_MARK 600
@@ -170,7 +176,7 @@
 #define LTOL (1.0 - TOLERANCE/100.) 
 #define UTOL (1.0 + TOLERANCE/100.) 
 
-#define _GAP 5000 // Minimum map between transmissions
+#define _GAP 1200 // Minimum map between transmissions
 #define GAP_TICKS (_GAP/USECPERTICK)
 
 #define TICKS_LOW(us) (int) (((us)*LTOL/USECPERTICK))
@@ -189,6 +195,7 @@ int MATCH_SPACE(int measured_ticks, int desired_us) {return MATCH(measured_ticks
 #define STATE_MARK     3
 #define STATE_SPACE    4
 #define STATE_STOP     5
+#define STATE_PAUSE    6
 
 // information for the interrupt handler
 typedef struct {
@@ -219,6 +226,8 @@ extern volatile irparams_t irparams;
 #define MIN_RC6_SAMPLES 1
 #define PANASONIC_BITS 48
 #define JVC_BITS 16
+#define HS5104_BITS 18
+
 
 // GPIO
 #define OUTPUT                1
@@ -235,23 +244,11 @@ extern volatile irparams_t irparams;
 // #define TIMER_ENABLE_PWM     (TCCR2A |= _BV(COM2B1))
 // #define TIMER_DISABLE_PWM    (TCCR2A &= ~(_BV(COM2B1)))
 #define TIMER_ENABLE_INTR    GPIO_PinAFConfig(ADVTIM_TIM_CAPTURE_GPIOx,ADVTIM_TIM_CAPTURE_PIN_SOURCE,ADVTIM_TIM_AF_VALUE);\
-                              ADVTIM_ClearITPendingBit(ADVICE_TIMx, TIM_IT_CC2);\
-                              ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC2, ENABLE)
-#define TIMER_DISABLE_INTR   ADVTIM_ITConfig(ADVICE_TIMx, TIM_IT_CC2, DISABLE);\
+                              ADVTIM_ITConfig(ADVICE_TIMx, ADVTIM_TIM_IT_CC_IRIN, ENABLE);\
+                              ADVTIM_ClearITPendingBit(ADVICE_TIMx, ADVTIM_TIM_IT_CC_IRIN)
+                              
+#define TIMER_DISABLE_INTR   ADVTIM_ITConfig(ADVICE_TIMx, ADVTIM_TIM_IT_CC_IRIN, DISABLE);\
                               ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,DISABLE)
-
-#define GET_TIMER_CAP_INPUT()   ADVICE_TIMx->CCER & (TIM_ICPolarity_Falling<<4) ? SPACE : MARK
-
-#define TOG_TIMER_CAP         ADVICE_TIMx->CCER ^= (TIM_ICPolarity_Falling<<4)
-
-#define GET_TIMER_CAP()       ADVTIM_GetCapture2(ADVICE_TIMx)
-
-#define TIMER_UPDATA_ENABLE_INTR  ADVTIM_ClearITPendingBit(ADVICE_TIMx , TIM_FLAG_Update);\
-                                  ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,ENABLE)
-
-#define TIMER_UPDATA_DISABLE_INTR  ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,DISABLE);\
-                                    ADVICE_TIMx->CCER |= (TIM_ICPolarity_Falling<<4)
-
 
 
 #define TIMER_INTR_NAME      ADVTIM_IRQHandler
@@ -276,10 +273,30 @@ extern volatile irparams_t irparams;
 #define MARK                  Bit_RESET
 #define SPACE                 Bit_SET
 
-#define TIMER_PWM_PORT        GPIOD  /* */
+// #define TIMER_PWM_PORT        GPIOD  /* */
+// #define TIMER_PWM_PIN         GPIO_Pin_3   Arduino Duemilanove, Diecimila, LilyPad, etc 
+
+// #define IR_REC_PORT           GPIOD
+// #define IR_REC_PIN            GPIO_Pin_3
+
+// Capture channel cc3p
+#define GET_TIMER_CAP_INPUT()   ADVICE_TIMx->CCER & (TIM_ICPolarity_Falling<<8) ? SPACE : MARK  
+
+#define TOG_TIMER_CAP         ADVICE_TIMx->CCER ^= (TIM_ICPolarity_Falling<<8)
+
+#define GET_TIMER_CAP()       ADVTIM_GetCapture3(ADVICE_TIMx)
+
+#define TIMER_UPDATA_ENABLE_INTR  ADVTIM_ClearITPendingBit(ADVICE_TIMx , TIM_FLAG_Update);\
+                                  ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,ENABLE)
+
+#define TIMER_UPDATA_DISABLE_INTR  ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,DISABLE);\
+                                    ADVICE_TIMx->CCER |= (TIM_ICPolarity_Falling<<8)
+
+
+#define TIMER_PWM_PORT        GPIOA  /* */
 #define TIMER_PWM_PIN         GPIO_Pin_3  /* Arduino Duemilanove, Diecimila, LilyPad, etc */
 
-#define IR_REC_PORT           GPIOD
+#define IR_REC_PORT           GPIOA
 #define IR_REC_PIN            GPIO_Pin_3
 
 #define pinMode(port, pin, direct)    if(direct){port->DIR |= pin;}else{port->DIR &=~ pin;}  

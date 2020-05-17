@@ -109,6 +109,29 @@ void sendSony(unsigned long data, int nbits) {
     data <<= 1;
   }
 }
+void sendHS5104(unsigned long data, int nbits) {
+  int i;
+  enableIROut(40);
+  mark(HS5104_HDR_MARK);
+  space(HS5104_HDR_SPACE);
+  mark(HS5104_HDR_MARK);
+  space(HS5104_HDR_SPACE);
+  mark(HS5104_HDR_SPACE);
+  space(HS5104_HDR_MARK);
+
+  data = data << (32 - nbits);
+  for (i = 0; i < nbits; i++) {
+    if (data & TOPBIT) {
+      mark(HS5104_ONE_SPACE);
+      space(HS5104_ZERO_SPACE);
+    } 
+    else {
+      mark(HS5104_ZERO_SPACE);
+      space(HS5104_ONE_SPACE);
+    }
+    data <<= 1;
+  }
+}
 
 void sendRaw(unsigned int buf[], int len, int hz)
 {
@@ -352,10 +375,10 @@ void TIMER_INTR_NAME(void)
 //    ADVTIM_Cmd(ADVICE_TIMx, DISABLE); 
     // ADVTIM_ITConfig(ADVICE_TIMx,TIM_IT_Update,DISABLE);
     TIMER_UPDATA_DISABLE_INTR;
-    ADVICE_TIMx->CCER |= (TIM_ICPolarity_Falling<<4);
+    // ADVICE_TIMx->CCER |= (TIM_ICPolarity_Falling<<4);
     irparams.rcvstate = STATE_STOP;
     // ucIntServedFlag = 1;  
-   GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
+   //GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
     // cap_start = 0;
     // cap_cnt = 0;
   } 
@@ -364,9 +387,9 @@ void TIMER_INTR_NAME(void)
   {
 			ADVTIM_ClearITPendingBit(ADVICE_TIMx, TIM_IT_CC1);
   }	
-  else if (ADVTIM_GetITStatus(ADVICE_TIMx, TIM_IT_CC2) != RESET)
+  else if (ADVTIM_GetITStatus(ADVICE_TIMx, ADVTIM_TIM_IT_CC_IRIN) != RESET)
   {
-    ADVTIM_ClearITPendingBit(ADVICE_TIMx, TIM_IT_CC2);
+    ADVTIM_ClearITPendingBit(ADVICE_TIMx, ADVTIM_TIM_IT_CC_IRIN);
     // ucIntCC2Flag = 1;
     // ADVICE_TIMx->CCER ^= (TIM_ICPolarity_Falling<<4);
   //   TOG_TIMER_CAP;
@@ -407,7 +430,7 @@ void TIMER_INTR_NAME(void)
 		
     if (irparams.rawlen >= RAWBUF) {
       // Buffer overflow
-      irparams.rcvstate = STATE_STOP;
+      irparams.rcvstate = STATE_PAUSE;
     }
     switch(irparams.rcvstate) {
     case STATE_IDLE: // In the middle of a gap
@@ -452,13 +475,15 @@ void TIMER_INTR_NAME(void)
       }
       break;
     case STATE_STOP: // waiting, measuring gap
-      if (irdata == MARK) { // reset gap timer
-        irparams.timer = 0;
-        //test
-          irparams.rcvstate = STATE_IDLE;
-					irparams.rawlen = 0;
-					ADVICE_TIMx->CCER |= (TIM_ICPolarity_Falling<<4);
-      }
+     //  if (irdata == MARK) { // reset gap timer
+     //    irparams.timer = 0;
+     //    //test
+     //      irparams.rcvstate = STATE_IDLE;
+					// irparams.rawlen = 0;
+					// ADVICE_TIMx->CCER |= (TIM_ICPolarity_Falling<<4);
+     //  }
+      break;
+    default:
       break;
     }
 
@@ -886,7 +911,59 @@ int decodePanasonic(decode_results *results) {
     results->bits = PANASONIC_BITS;
     return DECODED;
 }
+int decodeHS5104(decode_results *results) {
+    unsigned long long data = 0;
+    int offset = 0;
+    int i;
+    
+    if (!MATCH_MARK(results->rawbuf[offset], HS5104_HDR_MARK)) {
+        return ERR;
+    }
+    offset++;
+    if (!MATCH_MARK(results->rawbuf[offset], HS5104_HDR_SPACE)) {
+        return ERR;
+    }
+    offset++;
+    if (!MATCH_MARK(results->rawbuf[offset], HS5104_HDR_MARK)) {
+        return ERR;
+    }
+    offset++;
+    if (!MATCH_MARK(results->rawbuf[offset], HS5104_HDR_SPACE)) {
+        return ERR;
+    }
+    offset++;
+    if (!MATCH_MARK(results->rawbuf[offset], HS5104_HDR_SPACE)) {
+        return ERR;
+    }
+    offset++;
+    if (!MATCH_MARK(results->rawbuf[offset], HS5104_HDR_MARK)) {
+        return ERR;
+    }
+    offset++;
 
+    
+    // decode address
+    for (i = 0; i < HS5104_BITS; i+=2) {
+        // if (!MATCH_MARK(results->rawbuf[offset++], HS5104_BIT_MARK)) {
+        //     return ERR;
+        // }
+        if (MATCH_SPACE(results->rawbuf[offset],HS5104_ONE_SPACE)) {
+            data = (data << 1) | 1;
+        } else if (MATCH_SPACE(results->rawbuf[offset],HS5104_ZERO_SPACE)) {
+            data <<= 1;
+        } else {
+            return ERR;
+        }
+        offset+=2;
+    }
+
+
+    results->value = (unsigned long)data;
+    results->panasonicAddress = (unsigned int)(data >> 7);
+    results->decode_type = HS5104;
+    results->bits = HS5104_BITS;
+    return DECODED;
+}
 int decodeJVC(decode_results *results) {
     long data = 0;
     int offset = 1; // Skip first space
@@ -950,11 +1027,25 @@ int decode(decode_results *results) {
     return ERR;
   }
 
+
   results->rawbuf = irparams.rawbuf;
   results->rawlen = irparams.rawlen;
   if (irparams.rcvstate != STATE_STOP) {
     return ERR;
   }
+
+  if(!irparams.rawlen){
+    resume();
+    return ERR;
+  }else if(irparams.rawlen >= (HS5104_BITS+6)*4){
+#ifdef DEBUG
+    Debug_Print("Attempting HS5104 decode");
+#endif 
+    if (decodeHS5104(results)) {
+        return DECODED;
+    }
+  }
+
 #ifdef DEBUG
   Debug_Print("Attempting NEC decode");
 #endif
@@ -1164,6 +1255,7 @@ void IRSetFunction(IRrecv *irrecv, IRsend *irsend){
 
   irsend->sendNEC = sendNEC;
   irsend->sendSony = sendSony; 
+  irsend->sendHS5104 = sendHS5104; 
   irsend->sendRaw = sendRaw; 
   irsend->sendRC5 = sendRC5; 
   irsend->sendRC6 = sendRC6; 

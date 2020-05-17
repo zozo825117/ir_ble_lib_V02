@@ -1,4 +1,5 @@
 #include "debug_uart.h"
+#include "basetime.h"
 #include "misc.h"
 #include "stdio.h"
 
@@ -6,7 +7,11 @@ uint8_t UART_RX_BUF[1];    /*<interrupt recive data buffer*/
 uint8_t FlagState = 0;  /*<interrupt recive data flag*/
 uint8_t RxCounter = 0;
 
-
+uint32_t timeUartReceTimer = 0;
+uint8_t uart_rx_buf[20];
+uint8_t uart_rx_index;
+uint8_t uart_rx_ok;
+uint8_t rf_tx_len;
 
  /**
   * @brief  ÅäÖÃÇ¶Ì×ÏòÁ¿ÖÐ¶Ï¿ØÖÆÆ÷NVIC
@@ -184,8 +189,27 @@ void DEBUG_UART_IRQHandler(void)
 	else if((DEBUG_UARTx->ISR&UART_ISR_RI)==UART_ISR_RI)
 	{
 		 DEBUG_UARTx->ICR |= UART_ICR_RI;
-		 UART_RX_BUF[0]=UART_ReceiveData( DEBUG_UARTx);
+		 // UART_RX_BUF[0]=UART_ReceiveData( DEBUG_UARTx);
 		 FlagState =  0x01;
+
+
+		 uart_rx_buf[uart_rx_index++] = UART_ReceiveData(DEBUG_UARTx);
+
+		if(uart_rx_index >= 3 ){ //&& uart_rx_buf[uart_rx_index-1] == '\n' && (uart_rx_buf[uart_rx_index-2]& 0x0F) == '\r'
+				
+				rf_tx_len = uart_rx_index-3;
+				// Debug_Print(DEBUG_MESSAGE_LEVEL_4,"%d %d\r\n", uart_rx_buf[1], rf_tx_len);
+				if((uart_rx_buf[1] == (rf_tx_len-1)) && (rf_tx_len <=16) ){
+					uart_rx_ok = 1;
+					uart_rx_index = 0;
+				}
+		}
+		
+		if(uart_rx_index>18){
+			uart_rx_index = 0;
+		}
+
+		timeUartReceTimer = Timer_Get_Time_Stamp();
   }	
 	else
 	{;}

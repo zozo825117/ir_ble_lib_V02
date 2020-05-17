@@ -19,6 +19,7 @@
 /* Private include files ----------------------------------------------------*/
 #include "spi.h"
 #include "delay.h"
+#include "misc.h"
 
 /* Private Macros and Data type ---------------------------------------------*/      	   	   	   	   	   	   	   	   	
 /* Private function declaration ----------------------------------------------*/
@@ -34,13 +35,15 @@
 ********************************************************************************/
 void spi_init(void)
 {      
-#ifdef WIRE_SPI_MODE4
+#if defined(WIRE_SPI_MODE4)
 
 //  DRVSPI_MISO_INPUT;
 //  DRVSPI_CLK_OUTPUT;
 //  DRVSPI_MOSI_OUTPUT;
   GPIO_InitTypeDef GPIO_InitStruct;
-  
+#if defined(WIRE_SPI_HARDWARE)
+  SPI_InitTypeDef  SPI_InitStruct;
+#endif
   // CMU_APBPeriph1ClockCmd(CMU_APBPeriph1_PORT, ENABLE);
   GPIO_InitStruct.GPIO_Pin = WL1601_MISO_Pin;
   GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
@@ -69,13 +72,47 @@ void spi_init(void)
   GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
   GPIO_InitStruct.GPIO_Speed = GPIO_Low_Speed;
   GPIO_Init(WL1601_CSN_Port, &GPIO_InitStruct);
-  
-  DRVSPI_CLK0;
-  
+
+  GPIO_InitStruct.GPIO_Pin = WL1601_CE_Pin;
+  GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+  GPIO_InitStruct.GPIO_Speed = GPIO_Low_Speed;
+  GPIO_Init(WL1601_CE_Port, &GPIO_InitStruct);
+
+  // GPIO_PinAFConfig(WL1601_SCK_Port,WL1601_SCK_PinSRC,((uint8_t)0x00)); //Spiclk
+
+#if defined(WIRE_SPI_HARDWARE)
+  /*管脚复用*/
+  GPIO_PinAFConfig(WL1601_SCK_Port,WL1601_SCK_PinSRC,WL1601_SCK_AF_VALUE); //Spiclk
+  // GPIO_PinAFConfig(WL1601_CSN_Port,WL1601_CSN_PinSRC,WL1601_CSN_AF_VALUE); //Spinss 
+  GPIO_PinAFConfig(WL1601_MISO_Port,WL1601_MISO_PinSRC,WL1601_MISO_AF_VALUE); //Spimiso
+  GPIO_PinAFConfig(WL1601_MOSI_Port,WL1601_MOSI_PinSRC,WL1601_MOSI_AF_VALUE); //Spimosi
+
+  /* 停止信号 WL1601: CS引脚高电平*/
+  SPI_SSOutputCmd(SPI,DISABLE);
+
+  /* SPI 模式配置 */
+  // WL1601芯片 支持SPI模式0及模式3，据此设置CPOL CPHA
+  SPI_InitStruct.SPI_Mode = WL1601_SPI_MODE;  
+  SPI_InitStruct.SPI_CPOL = WL1601_SPI_CPOL;  
+  SPI_InitStruct.SPI_CPHA = WL1601_SPI_CPHA;  
+  SPI_InitStruct.SPI_BaudRatePrescaler = WL1601_SPI_BAUDRATEPRS;  
+  SPI_Init(WL1601_SPIx , &SPI_InitStruct);
+
+
+  SPI_Cmd(WL1601_SPIx,ENABLE);
+#else
+
+#if defined(WL1601_SCK_AF_VALUE_PA1)
+  GPIO_PinAFConfig(WL1601_SCK_Port,WL1601_SCK_PinSRC,WL1601_SCK_AF_VALUE_PA1); //Spiclk
 #endif
+  DRVSPI_CLK0;
 
-#ifdef WIRE_SPI_MODE3
-
+  DRVSPI_CSN1; //禁止SPI传输
+  DRVWL1601B_CE1;
+#endif /* defined(WIRE_SPI_HARDWARE) */
+#elif defined(WIRE_SPI_MODE3)
   GPIO_InitTypeDef GPIO_InitStruct;
 //  DRVSPI_CLK_OUTPUT;
 //  DRVSPI_MOSI_OUTPUT;
@@ -102,11 +139,17 @@ void spi_init(void)
   GPIO_InitStruct.GPIO_Speed = GPIO_Low_Speed;
   GPIO_Init(WL1601_CSN_Port, &GPIO_InitStruct);
   DRVSPI_CLK0;
-#endif
 
-    DRVSPI_CE_OUTPUT;
-    DRVSPI_CSN1; //禁止SPI传输
-    DRVWL1601B_CE1;
+  // DRVSPI_CE_OUTPUT;
+  DRVSPI_CSN1; //禁止SPI传输
+  // DRVWL1601B_CE1;
+#else
+#error "select hardware here\n"  
+#endif /* defined(WIRE_SPI_MODE4) */
+
+    // DRVSPI_CE_OUTPUT;
+    // DRVSPI_CSN1; //禁止SPI传输
+    // DRVWL1601B_CE1;
   	
 }
 
@@ -250,7 +293,7 @@ void phy_write_fifo(uint8_t reg, uint8_t *buf, uint8_t len)
 ********************************************************************************/
 void Chip_Reset(void)
 {
-#ifndef WIRE_SPI_MODE3
+#if defined(WIRE_SPI_MODE4)
   RF_DISABLE();
   RF_SPI_DESELECT();
 
@@ -260,7 +303,7 @@ void Chip_Reset(void)
   
   RF_ENABLE();
   delay_ms(5);
-#else
+#elif defined(WIRE_SPI_MODE3)
   /**
     SPI_CSN_I long low pulse (>10ms) defined as reset_n 
    */
@@ -279,6 +322,8 @@ void Chip_Reset(void)
   DrvSPI_SendByte2PHASE(94);     //发送寄存器号 
   DrvSPI_SendByte2PHASE(0x80);   //写入寄存器的值
   DRVSPI_CSN1;    //禁止SPI传输   
+#else
+#error "select hardware here\n"  
 #endif
 
 }
@@ -293,23 +338,45 @@ void Chip_Reset(void)
 ********************************************************************************/
 void DrvSPI_SendByte2PHASE(uint8_t dat)
 {  	
-   	uint8_t i;
-#ifndef WIRE_SPI_MODE3
-   	for(i=0;i<8;i++){
-   	   	DRVSPI_CLK1;
-   	   	if(dat&0x80)
+   	uint8_t i,SPI_Data;
+#if defined(WIRE_SPI_MODE4) 
+    #if defined(WIRE_SPI_HARDWARE) 
+    /* 写入数据寄存器，把要写入的数据写入发送缓冲区 */
+    // SPI_SendData(WL1601_SPIx , dat);
+    WL1601_SPIx->DATA = dat;
+    while((SPI->STAT & SPI_FLAG_SPIF) != SPI_FLAG_SPIF);
+    SPI_Data = SPI->DATA;
+    #else
+   	// for(i=0;i<8;i++){
+   	//    	DRVSPI_CLK1;
+   	//    	if(dat&0x80)
+    //     {
+    //       DRVSPI_MOSI1;
+    //     }
+   	//    	else
+    //     {
+    //       DRVSPI_MOSI0;
+    //     }
+   	//    	dat<<=1;
+   	//    	DRVSPI_CLK0;
+   	// }
+   	// DRVSPI_CLK0;
+    for(i=0;i<8;i++){
+        DRVSPI_CLK0;
+        if(dat&0x80)
         {
           DRVSPI_MOSI1;
         }
-   	   	else
+        else 
         {
           DRVSPI_MOSI0;
         }
-   	   	dat<<=1;
-   	   	DRVSPI_CLK0;
-   	}
-   	DRVSPI_CLK0;
-#else
+        dat<<=1;
+        DRVSPI_CLK1;
+    }
+    DRVSPI_CLK0;
+    #endif /* defined(WIRE_SPI_HARDWARE)  */
+#elif  defined(WIRE_SPI_MODE3) 
 	DRVSPI_MOSI_OUTPUT;
    	for(i=0;i<8;i++){
    	   	DRVSPI_CLK0;
@@ -325,7 +392,9 @@ void DrvSPI_SendByte2PHASE(uint8_t dat)
    	   	DRVSPI_CLK1;
    	}
    	DRVSPI_CLK0;
-#endif
+#else
+#error "select hardware here\n"  
+#endif  /* defined(WIRE_SPI_MODE4)  */
 }
 
 
@@ -340,7 +409,17 @@ void DrvSPI_SendByte2PHASE(uint8_t dat)
 uint8_t DrvSPI_ReceiveByte2PHASE(void)
 {
    	uint8_t i,rec=0;
-#ifndef WIRE_SPI_MODE3	
+
+#if defined(WIRE_SPI_MODE4) 
+    #if defined(WIRE_SPI_HARDWARE)
+    // SPI_SendData(WL1601_SPIx , 0x00);
+    WL1601_SPIx->DATA = 0xFF;
+    // while(SPIFlagState == 0)
+    // {;}
+    // SPIFlagState = 0;
+    while((SPI->STAT & 0x80) != 0x80);
+    rec = SPI->DATA;
+    #else
    	for(i=0;i<8;i++){
    	   	DRVSPI_CLK1;
    	   	rec<<=1;
@@ -351,7 +430,8 @@ uint8_t DrvSPI_ReceiveByte2PHASE(void)
    	   	DRVSPI_CLK0;
    	}
    	DRVSPI_CLK0;
-#else
+    #endif /*   */
+#elif defined(WIRE_SPI_MODE3) 
 	DRVSPI_MOSI_INPUT;
    	for(i=0;i<8;i++){
    	   	
@@ -364,6 +444,8 @@ uint8_t DrvSPI_ReceiveByte2PHASE(void)
    	   	DRVSPI_CLK0;
    	}
    	DRVSPI_CLK0;
-#endif	
+#else
+#error "select hardware here\n"   
+#endif	/* defined(WIRE_SPI_MODE4)  */
    	return rec;
 }

@@ -10,7 +10,7 @@
 #include "blecomm.h"
 #include "IRmain.h"
 
-uint8_t bMacAddr[] = {0xCC,0xAA,0x11,0x00,0x21,0x11};
+uint8_t bMacAddr[] = {0xCC,0x33,0x38,0x00,0x0C,0x51};
 
 
 uint8_t device_name[] = "ir ble";
@@ -18,15 +18,15 @@ uint8_t wait2_4G = 0;
 //uint32_t time_tick=0;
 uint32_t timeCloseTimer = 0;
 uint32_t timeDisconnectTimer = 0;
-uint32_t timeUartReceTimer = 0;
+
 uint32_t runTimeTimer =0;
 uint32_t irTimeTimer = 0;
 uint32_t send2_4GTimer = 0;
 
-uint8_t uart_rx_buf[20];
-uint8_t uart_rx_index;
-uint8_t uart_rx_ok;
-uint8_t rf_tx_len;
+// uint8_t uart_rx_buf[20];
+// uint8_t uart_rx_index;
+// uint8_t uart_rx_ok;
+// uint8_t rf_tx_len;
 uint8_t test_step = 0;
 
 uint8_t test_send_count = 0;
@@ -72,7 +72,7 @@ void TIMER11_IRQHandler(void)
   TIM11->ICLR = (uint32_t)(0x01&TIM_IT_FLAG);
 
   Ble_BackgroudProcess();
-  // GPIO_ToggleBits(TEST_GPIO_PORT, TEST_GPIO_PORT_PIN);
+  //TEST_PIN_TOGGLE;
 		
 }
 
@@ -124,7 +124,7 @@ void app_callback(uint32_t event, uint8_t * eventParam)
 				Debug_Print("BLE_EVT_GATTC_HANDLE_VALUE_NTF send len= 0x%x\r\n", eventParam[0]);
 				Debug_Print(" data=0x");
 				for(i=0;i<eventParam[0];i++){
-					Debug_Print(" %x", eventParam[i+1]);
+					Debug_Print(" %02x", eventParam[i+1]);
 				}
 				Debug_Print("\r\n");
 
@@ -133,19 +133,32 @@ void app_callback(uint32_t event, uint8_t * eventParam)
 			break;
 
 		case BLE_EVT_GATTS_PREP_RECEIVE_DATA:
-				Debug_Print("BLE_EVT_GATTS_PREP_RECEIVE_DATA recv len= 0x%x\r\n", eventParam[0]);
+				Debug_Print("BLE_EVT_GATTS_PREP_RECEIVE_DATA recv len= 0x%02x\r\n", eventParam[0]);
 				Debug_Print(" data=0x");
 				for(i=0;i<eventParam[0];i++){
-					Debug_Print(" %x", eventParam[i+1]);
+					Debug_Print(" %02x", eventParam[i+1]);
 				}
 				Debug_Print("\r\n");
 				
-				IRBleCmdRec(eventParam, &IRdata);
+				//IRBleCmdRec(eventParam, &IRdata);
 				//for ble no deal close
 				timeDisconnectTimer = Timer_Get_Time_Stamp();
 				
 			break;
 
+		case BLE_EVT_GAP_SCAN_RESPONSE:
+				Debug_Print("BLE_EVT_GAP_SCAN_RESPONSE data=0x");
+				for(i=0;i<10;i++){
+					Debug_Print(" %02x", eventParam[i]);
+				}
+				Debug_Print("\r\n");
+
+				IRBleCmdRec(eventParam, &IRdata);
+
+				//for ble no deal close
+				timeDisconnectTimer = Timer_Get_Time_Stamp();
+				
+			break;
 	}
 }
 
@@ -156,7 +169,7 @@ void testTask(void)
 		// *10ms
 		if(test_step == 0){
 			if(Ble_GetState() == BLE_STATE_INITIALIZING || Ble_GetState() == BLE_STATE_STOPPED){
-				if(Ble_Start() == BLE_ERROR_OK){
+				if(Ble_Start(50) == BLE_ERROR_OK){
 					Debug_Print("Ble_Start ok\r\n");
 				}	
 			}
@@ -300,9 +313,9 @@ int main( void )
 		Debug_Print("Ble_SetName error\r\n");
 	}
 
-	//IRinit();
+	IRinit();
 
-	//IRdata.cmd = IR_CMD_REC_REPLAY;
+	IRdata.cmd = IR_CMD_REC_REPLAY;
 	
 	/*时间获取显示*/
 	while(1)
@@ -319,7 +332,7 @@ int main( void )
 		}
 		
 		if(Timer_Time_Elapsed(irTimeTimer,100)){
-			//IRloop(&IRdata);
+			IRloop(&IRdata);
 
 			if(IRdata.cmd == IR_CMD_SEND){
 //				if(test_send_count > 10){

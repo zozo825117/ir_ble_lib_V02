@@ -58,10 +58,16 @@
 #define     ADVTIM_TIM_CCMRVALUE             CCMR_Frozen
 
 
-#define     ADVTIM_TIM_CAPTURE_GPIOx              GPIOD//GPIOC
-#define     ADVTIM_TIM_SINGLECAPTURE_GPIOx        GPIOA
+// #define     ADVTIM_TIM_CAPTURE_GPIOx              GPIOD//GPIOC
+// #define     ADVTIM_TIM_SINGLECAPTURE_GPIOx        GPIOA
+// #define     ADVTIM_TIM_CAPTURE_PIN_SOURCE         GPIO_PinSource3//GPIO_PinSource4
+// #define     ADVTIM_TIM_AF_VALUE                   ((uint8_t)0x08) // GPIO_AF_TIM2_CH2_PD3    GPIO_AF_TIM1_CH4_PC4
+
+#define     ADVTIM_TIM_CAPTURE_GPIOx              GPIOA//GPIOC
+// #define     ADVTIM_TIM_SINGLECAPTURE_GPIOx        GPIOA
 #define     ADVTIM_TIM_CAPTURE_PIN_SOURCE         GPIO_PinSource3//GPIO_PinSource4
 #define     ADVTIM_TIM_AF_VALUE                   ((uint8_t)0x08) // GPIO_AF_TIM2_CH2_PD3    GPIO_AF_TIM1_CH4_PC4
+
 
 #define		  ADVTIM_TIM_Channel1          TIM_Channel_1
 #define		  ADVTIM_TIM_Channel2          TIM_Channel_2
@@ -75,7 +81,9 @@
 
 
 
-#define		  ADVTIM_TIM_Channel          ADVTIM_TIM_Channel2
+// #define		  ADVTIM_TIM_Channel          ADVTIM_TIM_Channel2
+#define		  ADVTIM_TIM_Channel          ADVTIM_TIM_Channel3
+#define 	  ADVTIM_TIM_IT_CC_IRIN          TIM_IT_CC3
 #define		  ADVTIM_TIM_TRGOSOURCE       TIM_TRGOSource_Reset
 
 #define            ADVANCE_TIM_IRQ               ADVTIM_IRQn
